@@ -1,4 +1,4 @@
-
+from geometry import *
 # colors constants
 
 WHITE = (255, 255, 255)
@@ -24,5 +24,5 @@ DECAL = 1.7
 # Car parameters
 
 SIZE = 16
-INIT_POS = (0.85*DECAL*OFFSET*WIDTH , 0.8*DECAL*OFFSET*HEIGHT)
+INIT_POS = Point(0.85*DECAL*OFFSET*WIDTH , 0.8*DECAL*OFFSET*HEIGHT)
 #INIT_POS = (OFFSET*WIDTH , OFFSET*HEIGHT)

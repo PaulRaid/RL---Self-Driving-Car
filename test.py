@@ -1,5 +1,7 @@
 import pygame
 from math import pi
+from geometry import *
+
 pygame.init()
 
 screen = pygame.display.set_mode((100, 100))

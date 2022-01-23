@@ -2,6 +2,8 @@ from cgitb import grey
 import pygame
 from pygame.locals import *
 from constants import *
+from geometry import *
+
 
 class Wall:
     def __init__(self, x1, y1, x2, y2):
@@ -14,10 +16,10 @@ class Wall:
         pygame.draw.line(screen, GREY , start_pos=(self.x1, self.y1), end_pos=(self.x2, self.y2), width=linewidth)
     
     def get_start(self):
-        return pygame.math.Vector2((self.x1), (self.y1))
+        return Point((self.x1), (self.y1))
     
     def get_last(self):
-        return pygame.math.Vector2((self.x2), (self.y2))
+        return Point((self.x2), (self.y2))
 
 
 class Track:

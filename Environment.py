@@ -3,6 +3,8 @@ from pygame.locals import *
 from utils_track import *
 from car import *
 from constants import *
+from geometry import *
+
 
 successes, failures = pygame.init()
 print("{0} successes and {1} failures".format(successes, failures))
