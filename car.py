@@ -19,6 +19,15 @@ def ccw(A,B,C):
 def intersect(A,B,C,D):  # returns True if there is an intersection
     return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
 
+def rot_center(image, angle):
+    """rotate an image while keeping its center and size"""
+    orig_rect = image.get_rect()
+    rot_image = pygame.transform.rotate(image, angle)
+    rot_rect = orig_rect.copy()
+    rot_rect.center = rot_image.get_rect().center
+    rot_image = rot_image.subsurface(rot_rect).copy()
+    return rot_image
+
 
 class Car(pygame.sprite.Sprite):
     def __init__(self, screen, track):
@@ -37,7 +46,8 @@ class Car(pygame.sprite.Sprite):
         self.pos = ((340, 240))
         self.vel = (0,0)
         self.acc = (0,0)
-        self.direction = "RIGHT"
+        self.direction_vector = (1,0)
+
 
     def move(self, event):
         if event.key == pygame.K_LEFT:
@@ -55,6 +65,14 @@ class Car(pygame.sprite.Sprite):
         if event.key == pygame.K_r:
             self.rect.x = INIT_POS[0]
             self.rect.y = INIT_POS[1]
+            self.replace()
+        if event.key == pygame.K_a:
+            angle = 45
+            orig_rect = self.image.get_rect()
+            self.image = pygame.transform.rotate(self.image, angle)
+            rot_rect = orig_rect.copy()
+            rot_rect.center = self.image.get_rect().center
+            self.image = self.image.subsurface(rot_rect).copy()
             self.replace()
 
     def update(self):
@@ -74,12 +92,20 @@ class Car(pygame.sprite.Sprite):
     def is_position_valid(self):
         x = self.rect.x
         y = self.rect.y
-        print(x,y)
+        dirx = self.direction_vector[0]
+        diry = self.direction_vector[1]
+
+        # To remember: the perpendicular clockwith (with our axes config) to vector (x, y) is (-y, x)
         s = SIZE
-        up = [(x,y), (x + 2*s, y)]
-        down = [(x,y + s), (x + 2*s, y + s)]
-        left = [(x,y), (x, y + s)]
-        right = [(x + 2*s, y), (x + 2*s, y + s)]
+        #up = [(x,y), (x + 2 * s * dirx, y + s * diry)]
+        #down = [(x - diry * s,y + dirx * s), (x - diry * s + 2 * s * dirx, y + dirx * s + s * diry)]
+        #left = [(x,y), (x - diry * s,y + dirx * s)]
+        #right = [(x + 2 * s * dirx, y + s * diry), (x - diry * s + 2 * s * dirx, y + dirx * s + s * diry)]
+
+        up = [self.rect.topleft, self.rect.topright]
+        down = [self.rect.bottomleft, self.rect.bottomright]
+        left = [self.rect.topleft, self.rect.bottomleft]
+        right = [self.rect.topright, self.rect.bottomright]
         sides = [up, down,left,right]
         res = True
         for a in sides:
