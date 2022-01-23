@@ -19,7 +19,7 @@ FPS = 60
 # Track parameters 
 
 OFFSET = 0.1
-DECAL = 1.7
+DECAL = 2
 
 # Car parameters
 

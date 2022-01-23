@@ -21,6 +21,29 @@ def ccw(A,B,C):
 def intersect(A,B,C,D):  # returns True if there is an intersection
     return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
 
+def slope(p1, p2) :
+   return (p2.y - p1.y) * 1. / (p2.x - p1.x)
+   
+def y_intercept(slope, p1) :
+   return p1.y - 1. * slope * p1.x
+   
+def intersect_point(line1, line2) :
+   min_allowed = 1e-5   # guard against overflow
+   big_value = 1e10     # use instead (if overflow would have occurred)
+   
+   m1 = slope(line1[0], line1[1])
+   b1 = y_intercept(m1, line1[0])
+   m2 = slope(line2[0], line2[1])
+   b2 = y_intercept(m2, line2[0])
+
+   if abs(m1 - m2) < min_allowed :
+      x = big_value
+   else :
+      x = (b2 - b1) / (m1 - m2)
+   y = m1 * x + b1
+   y2 = m2 * x + b2
+
+   return (int(x),int(y))      # returns intersection point between 2 lines --> To exectute only if we have the existancy within the segment
 
 # Code for rotations --> angle in radians
 

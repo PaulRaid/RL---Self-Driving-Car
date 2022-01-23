@@ -4,15 +4,6 @@ from constants import *
 import pygame.math
 from geometry import *
 
-# The Rays going in all the directions from the car
-
-class Vision():
-    def __init__(self, x1, y1, angle):
-        self.x1 = x1
-        self.y1 = y1
-        self.angle = angle
-
-
 class Car():
     def __init__(self, screen, track):
         
