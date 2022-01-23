@@ -1,27 +1,64 @@
-import pygame
-from math import pi
-from geometry import *
+import pygame as py  
 
-pygame.init()
+# define constants  
+WIDTH = 500  
+HEIGHT = 500  
+FPS = 30  
 
-screen = pygame.display.set_mode((100, 100))
-WHITE = pygame.Color(255, 255, 255)
-RED = pygame.Color(255, 0, 0) 
+# define colors  
+BLACK = (0 , 0 , 0)  
+GREEN = (0 , 255 , 0)  
+RED = (255, 0,0)
 
-# But code snippet here
-size = (50, 50)
-points = [(25, 0), (50, 25), (25, 50), (0, 25)]  # The corner points of the polygon.
+# initialize pygame and create screen  
+py.init()  
+screen = py.display.set_mode((WIDTH , HEIGHT))  
+# for setting FPS  
+clock = py.time.Clock()  
 
-polygon = pygame.Surface(size)
-pygame.draw.polygon(polygon, RED, points, 10)
+rot = 0  
+rot_speed = 2  
 
-polygon_filled = pygame.Surface(size)
-pygame.draw.polygon(polygon_filled, RED, points)
+# define a surface (RECTANGLE)  
+image_orig = py.Surface((100 , 100))  
+# for making transparent background while rotating an image  
+image_orig.set_colorkey(BLACK)  
+# fill the rectangle / surface with green color  
+image_orig.fill(GREEN)  
+# creating a copy of orignal image for smooth rotation  
+image = image_orig.copy()  
+image.set_colorkey(BLACK)  
+# define rect for placing the rectangle at the desired position  
+rect = image.get_rect()  
+rect.center = (WIDTH // 2 , HEIGHT // 2)  
+# keep rotating the rectangle until running is set to False  
+running = True  
+while running:  
+    # set FPS  
+    clock.tick(FPS)  
+    # clear the screen every time before drawing new objects  
+    screen.fill(BLACK)  
+    # check for the exit  
+    for event in py.event.get():  
+        if event.type == py.QUIT:  
+            running = False  
+        elif event.type == py.KEYDOWN:
+            if event.key == py.K_DOWN:
+                rect.move_ip(0, 20)
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            quit()
-    
-    #screen.blit(image, (25, 25))
-    pygame.display.update()
+    # making a copy of the old center of the rectangle  
+    old_center = rect.center  
+    # defining angle of the rotation  
+    rot = (rot + rot_speed) % 360  
+    # rotating the orignal image  
+    new_image = py.transform.rotate(image_orig , rot)  
+    rect = new_image.get_rect()  
+    # set the rotated rectangle to the old center  
+    rect.center = old_center  
+    # drawing the rotated rectangle to the screen  
+    screen.blit(new_image , rect)  
+    # flipping the display after drawing everything  
+    py.display.update()  
+
+py.quit()  
+

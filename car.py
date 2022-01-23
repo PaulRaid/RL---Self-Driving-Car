@@ -1,3 +1,4 @@
+from cv2 import rotate
 import pygame
 from constants import * 
 import pygame.math
@@ -12,59 +13,103 @@ class Vision():
         self.angle = angle
 
 
-class Car(pygame.sprite.Sprite):
+class Car():
     def __init__(self, screen, track):
-        super().__init__()
         
         self.screen = screen
         self.track = track
 
-        self.rect = pygame.Rect((INIT_POS.x, INIT_POS.y), (2*SIZE, SIZE))
-        self.image = pygame.Surface((2*SIZE, SIZE))
-        self.image.fill(RED)
+        #self.rect = pygame.Rect((INIT_POS.x, INIT_POS.y), (2*SIZE, SIZE))
+        self.image_base = pygame.Surface((2*SIZE, SIZE))
+        self.image_base.set_colorkey(BLACK)
+        self.image_base.fill(RED)
+        self.image = self.image_base.copy()
+        self.image.set_colorkey(BLACK)
 
+        self.rect = self.image.get_rect()
+        self.rect.x = INIT_POS.x
+        self.rect.y = INIT_POS.y
+        
+
+        self.p1 = self.rect.topleft
+        self.p2 = self.rect.topright
+        self.p3 = self.rect.bottomright
+        self.p4 = self.rect.bottomleft
+
+        self.angle = 15
 
         # Position and initial speed
-        self.v = (0,0)
-        self.pos = ((340, 240))
-        self.vel = (0,0)
-        self.acc = (0,0)
+        # Locally
+        self.xspeed = 1
+        self.yspeed = 0
+        self.velvalue = pygame.math.Vector2.length(Point(self.xspeed, self.yspeed))
+        self.accel = 1
         self.direction_vector = (1,0)
 
-
-    def move(self, event):
+    # method to change the class parameters of the car
+    def modify(self, event):                          
         if event.key == pygame.K_LEFT:
             self.rect.move_ip(-20, 0)
-            self.replace()
         if event.key == pygame.K_RIGHT:
             self.rect.move_ip(20, 0)
-            self.replace()
         if event.key == pygame.K_UP:
             self.rect.move_ip(0, -20)
-            self.replace()
         if event.key == pygame.K_DOWN:
             self.rect.move_ip(0, 20)
-            self.replace()
         if event.key == pygame.K_r:
             self.rect.x = INIT_POS.x
             self.rect.y = INIT_POS.y
-            self.replace()
-        if event.key == pygame.K_a:
-            pass
+        if event.key == pygame.K_p:
+            self.turn()
+            self.rot()
+        if event.key == pygame.K_o:
+            self.turn(-1)
+            self.rot()
 
+
+    # method to actually move the position of the car
     def update(self):
-        pass
+        #self.rect.move_ip(self.xspeed, self.yspeed)
+        self.replace()
     
-    def attack(self):
-        pass
+    def turn(self, dir = 1):
+        self.angle = (self.angle + dir * 15 ) % 360
     
-    def jump(self):
-        pass
+    def rot(self):
+        
+        angle_ = self.angle
+
+        nouv_vel = rotate_point_around_center(Point(0,0), Point(0, self.velvalue), angle_)
+        self.xspeed, self.yspeed = nouv_vel.to_tuple()
+
+        nouv_corner_1 = Point(self.rect.topleft[0] + self.xspeed, self.rect.topleft[1] + self.yspeed)
+        nouv_corner_2 = Point(self.rect.topright[0] + self.xspeed, self.rect.topright[1] + self.yspeed)
+        nouv_corner_3 = Point(self.rect.bottomright[0] + self.xspeed, self.rect.bottomright[1] + self.yspeed)
+        nouv_corner_4 = Point(self.rect.bottomleft[0] + self.xspeed, self.rect.bottomleft[1] + self.yspeed)
+
+        self.p1, self.p2, self.p3, self.p4 = rotate_rect(nouv_corner_1, nouv_corner_2, nouv_corner_3, nouv_corner_4, angle_)
+
+        old_center = self.rect.center
+
+        new_image = pygame.transform.rotate(self.image_base, angle_)
+        
+        self.rect = new_image.get_rect()
+
+        self.rect.center = old_center
+
+        self.image = new_image.copy()
     
-    def replace(self):
+    
+    # method to check if the position is authorised and replace it
+    def replace(self):                              
         if not self.is_position_valid():
+            
+            new_image = pygame.transform.rotate(self.image_base, 0)
+            self.rect = new_image.get_rect()
             self.rect.x = INIT_POS.x
             self.rect.y = INIT_POS.y
+            self.image = new_image.copy()
+            self.angle = 15
 
     def is_position_valid(self):
         x = self.rect.x
@@ -94,8 +139,13 @@ class Car(pygame.sprite.Sprite):
                 res = res and not intersect(p1, p2, wall.get_start(), wall.get_last())
         return res
 
-    def draw_car(self):
-        self.screen.blit(self.image, self.rect)
-
-
+    def draw_car(self, screen):
+        screen.blit(self.image, self.rect)
+        
+    def print_car(self):
+        print(self.p1)
+        print(self.p2)
+        print(self.p3)
+        print(self.p4)
+        print(" ")
     

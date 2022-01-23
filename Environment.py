@@ -20,14 +20,18 @@ driver = Car(screen, track)
 # Animation Loop
 while True:
     clock.tick(FPS)
+    screen.fill(BLACK)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
         elif event.type == pygame.KEYDOWN:
-            driver.move(event)
-                
-
-    screen.fill(BLACK)
+            driver.modify(event)
+    
+    driver.update()
+    
+    
     track.draw_track()
-    driver.draw_car()
+    driver.draw_car(screen)
+    driver.print_car()
     pygame.display.update()
+
