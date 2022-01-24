@@ -35,6 +35,6 @@ class Vision():
         return (points[indmin], distances[indmin])
 
     def dray_ray(self, endpoint, screen):
-        pygame.draw.aaline(screen, GREEN , start_pos=self.orig, end_pos=self.coord_inf())
-        pygame.draw.circle(screen, BLUE, self.orig, 2, width = 2)
-        pygame.draw.circle(screen, BLUE, endpoint, 8, width = 2)
+        pygame.draw.aaline(screen, GREEN , start_pos=self.orig, end_pos=endpoint)
+        #pygame.draw.circle(screen, BLUE, self.orig, 1, width = 2)
+        pygame.draw.circle(screen, BLUE, endpoint, 2)

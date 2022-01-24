@@ -154,10 +154,35 @@ class Car():
         print(" ")
     
     def set_rays(self):
-        front = Vision(self.rect.centerx, self.rect.centery, self.direction_vector)
-        back = Vision(self.rect.centerx, self.rect.centery, -self.direction_vector)
-        #front1 = Vision(self.p2.x, self.p2.y, self.direction_vector)
-        #front2 = Vision(self.rect.bottomright[0], self.rect.bottomright[1], self.direction_vector)
-        return [front, back] #, front1, front2]
+        u = self.direction_vector.normalize()
+        v = pygame.math.Vector2(u.y, -u.x)
+        s = SIZE
+        u = s*u
+        v = s*v/2
+        
+        res = []
+        
+        res.append(Vision(self.rect.centerx + u.x, self.rect.centery + u.y, self.direction_vector)) #front
+        res.append(Vision(self.rect.centerx - u.x, self.rect.centery - u.y, -self.direction_vector)) #back
+        
+        res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector)) # front 0
+        res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(-15))) # front up 30
+        res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(-30))) # front up 30
+        res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(-60))) # front up 60
+        res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(15))) # front up down 15
+        
+        
+        res.append(Vision(self.rect.centerx + v.x, self.rect.centery + v.y, v)) # side up 90
+        res.append(Vision(self.rect.centerx - v.x, self.rect.centery - v.y, -v)) # side down 90
+        
+        
+        res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector)) # down 
+        res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(15))) # front down  30
+        res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(30))) # front down  30
+        res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(60))) # front down  60
+        res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(-15))) # front down up 60
+        
+        
+        return res
     
     # fix ce probelem avec le vecteur directeur et son orthogonal->se deplacer comme ca a partir du centre qui est toujours bon !
