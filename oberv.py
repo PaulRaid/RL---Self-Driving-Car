@@ -29,17 +29,12 @@ class Vision():
 
         for i,wall in enumerate(walls):
             if self.one_intersects(wall):
-                points[i] = intersect_point([self.orig, self.inf], [wall.get_start(), wall.get_last()])
+                points[i] = intersect_point_fixed([self.orig, self.inf], [wall.get_start(), wall.get_last()])
                 distances[i] = self.orig.dist(points[i])
-       # print("distances", distances)
-       # print("Points", points)
         indmin = np.argmin(distances)
         return (points[indmin], distances[indmin])
 
     def dray_ray(self, endpoint, screen):
-        #pygame.draw.line(screen, GREEN , start_pos=self.orig, end_pos=endpoint, width=2)
-        #print("origine", self.orig)
-       # print(" ")
         pygame.draw.aaline(screen, GREEN , start_pos=self.orig, end_pos=self.coord_inf())
-        pygame.draw.circle(screen, BLUE, self.orig, 8, width = 2)
+        pygame.draw.circle(screen, BLUE, self.orig, 2, width = 2)
         pygame.draw.circle(screen, BLUE, endpoint, 8, width = 2)

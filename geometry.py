@@ -2,6 +2,7 @@ import pygame
 import math
 import numpy as np
 from constants import *
+from numpy.linalg import inv
 
 
 class Point(pygame.math.Vector2):
@@ -25,35 +26,24 @@ def ccw(A,B,C):
 def intersect(A,B,C,D):  # returns True if there is an intersection
     return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
 
-def slope(p1, p2) :
-    min_allowed = 1e-5   # guard against overflow
-    big_value = 1e10
-    if (p2.x - p1.x) < min_allowed:
-        return 2
-    else: 
-        return (p2.y - p1.y) * 1. / (p2.x - p1.x)
-   
-def y_intercept(slope, p1) :
-   return p1.y - 1. * slope * p1.x
-   
-def intersect_point(line1, line2) :
-   min_allowed = 1e-5   # guard against overflow
-   big_value = 1e10     # use instead (if overflow would have occurred)
-   
-   m1 = slope(line1[0], line1[1])
-   b1 = y_intercept(m1, line1[0])
-   m2 = slope(line2[0], line2[1])
-   b2 = y_intercept(m2, line2[0])
+def intersect_point_fixed(line1, line2):
+    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
 
-   if abs(m1 - m2) < min_allowed :
-      x = big_value
-   else :
-      x = (b2 - b1) / (m1 - m2)
-   y = m1 * x + b1
-   y2 = m2 * x + b2
+    def det(a, b):
+        return a[0] * b[1] - a[1] * b[0]
 
-   return Point(x,y)     # returns intersection point between 2 lines --> To exectute only if we have the existancy within the segment
+    div = det(xdiff, ydiff)
+    if div == 0:
+       raise Exception('lines do not intersect')
 
+    d = (det(*line1), det(*line2))
+    x = det(d, xdiff) / div
+    y = det(d, ydiff) / div
+    return Point(x, y)
+
+
+#-----
 # Code for rotations --> angle in radians
 
 def rotate_point_around_center(center,point,angle_):
@@ -67,9 +57,14 @@ def rotate_rect(pt1, pt2, pt3, pt4, angle):
 
     pt_center = Point((pt1.x + pt3.x)/2, (pt1.y + pt3.y)/2)
 
-    pt1 = rotate_point_around_center(pt_center,pt1,angle)
+    '''pt1 = rotate_point_around_center(pt_center,pt1,angle)
     pt2 = rotate_point_around_center(pt_center,pt2,angle)
     pt3 = rotate_point_around_center(pt_center,pt3,angle)
-    pt4 = rotate_point_around_center(pt_center,pt4,angle)
+    pt4 = rotate_point_around_center(pt_center,pt4,angle)'''
+    
+    pt1 = pt1.rotate(angle)
+    pt2 = pt2.rotate(angle)
+    pt3 = pt3.rotate(angle)
+    pt4 = pt4.rotate(angle)
 
     return pt1, pt2, pt3, pt4

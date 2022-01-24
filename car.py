@@ -1,4 +1,3 @@
-from cv2 import rotate
 import pygame
 from constants import * 
 import pygame.math
@@ -23,10 +22,10 @@ class Car():
         self.rect.y = INIT_POS.y
         
 
-        self.p1 = self.rect.topleft
-        self.p2 = self.rect.topright
-        self.p3 = self.rect.bottomright
-        self.p4 = self.rect.bottomleft
+        self.p1 = Point(self.rect.topleft[0], self.rect.topleft[1])
+        self.p2 = Point(self.rect.topright[0], self.rect.topright[1])
+        self.p3 = Point(self.rect.bottomright[0], self.rect.bottomright[1])
+        self.p4 = Point(self.rect.bottomleft[0], self.rect.bottomleft[1])
 
         self.angle = 0
 
@@ -42,15 +41,16 @@ class Car():
         self.rays = self.set_rays()    # array
 
     # method to change the class parameters of the car
-    def modify(self, event):                          
+    def modify(self, event):   
+        vec = self.direction_vector.normalize()                       
         if event.key == pygame.K_LEFT:
-            self.rect.move_ip(-20, 0)
+            self.rect.move_ip(-20*vec.x, 20*vec.y)
         if event.key == pygame.K_RIGHT:
-            self.rect.move_ip(20, 0)
+            self.rect.move_ip(20*vec.x, 20*vec.y)
         if event.key == pygame.K_UP:
-            self.rect.move_ip(0, -20)
+            self.rect.move_ip(20*vec.y, -20*vec.x)
         if event.key == pygame.K_DOWN:
-            self.rect.move_ip(0, 20)
+            self.rect.move_ip(20*vec.y, 20*vec.x)
         if event.key == pygame.K_r:
             self.rect.x = INIT_POS.x
             self.rect.y = INIT_POS.y
@@ -66,20 +66,12 @@ class Car():
 
     # method to actually move the position of the car
     def update(self):
-
         self.rays = self.set_rays()
         self.replace()
     
     def turn(self, dir = 1):
-
-        prev_angle = self.angle
-
         self.angle = (self.angle + dir * ANGLE ) % 360
-        print('angle', self.angle)
-        print("dirvect", self.direction_vector)
-        self.direction_vector = self.direction_vector.rotate_rad(math.radians(-1*dir*ANGLE))
-        print("dirvect", self.direction_vector)
-        print(" ")
+        self.direction_vector = self.direction_vector.rotate(-1*dir*ANGLE)
     
     def rot(self):
         
@@ -114,7 +106,11 @@ class Car():
             self.rect.y = INIT_POS.y
             self.image = new_image.copy()
             self.angle = 0
-            self.as_turned = False
+            self.direction_vector = pygame.math.Vector2(1,0)
+            self.p1 = Point(self.rect.topleft[0], self.rect.topleft[1])
+            self.p2 = Point(self.rect.topright[0], self.rect.topright[1])
+            self.p3 = Point(self.rect.bottomright[0], self.rect.bottomright[1])
+            self.p4 = Point(self.rect.bottomleft[0], self.rect.bottomleft[1])
 
     def is_position_valid(self):
         x = self.rect.x
@@ -159,5 +155,9 @@ class Car():
     
     def set_rays(self):
         front = Vision(self.rect.centerx, self.rect.centery, self.direction_vector)
-        #back = Vision(self.rect.centerx, self.rect.centery, -self.direction_vector)
-        return [front]#, back]
+        back = Vision(self.rect.centerx, self.rect.centery, -self.direction_vector)
+        #front1 = Vision(self.p2.x, self.p2.y, self.direction_vector)
+        #front2 = Vision(self.rect.bottomright[0], self.rect.bottomright[1], self.direction_vector)
+        return [front, back] #, front1, front2]
+    
+    # fix ce probelem avec le vecteur directeur et son orthogonal->se deplacer comme ca a partir du centre qui est toujours bon !
