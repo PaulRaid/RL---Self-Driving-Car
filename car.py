@@ -3,6 +3,7 @@ import pygame
 from constants import * 
 import pygame.math
 from geometry import *
+from oberv import *
 
 class Car():
     def __init__(self, screen, track):
@@ -27,7 +28,7 @@ class Car():
         self.p3 = self.rect.bottomright
         self.p4 = self.rect.bottomleft
 
-        self.angle = 15
+        self.angle = 0
 
         # Position and initial speed
         # Locally
@@ -35,7 +36,10 @@ class Car():
         self.yspeed = 0
         self.velvalue = pygame.math.Vector2.length(Point(self.xspeed, self.yspeed))
         self.accel = 1
-        self.direction_vector = (1,0)
+        self.direction_vector = pygame.math.Vector2(1,0)
+        self.as_turned = False
+
+        self.rays = self.set_rays()    # array
 
     # method to change the class parameters of the car
     def modify(self, event):                          
@@ -50,26 +54,36 @@ class Car():
         if event.key == pygame.K_r:
             self.rect.x = INIT_POS.x
             self.rect.y = INIT_POS.y
-        if event.key == pygame.K_p:
+        if event.key == pygame.K_p:  # Turn Left
             self.turn()
             self.rot()
-        if event.key == pygame.K_o:
+            #pygame.quit()
+        if event.key == pygame.K_o:   # Turn Right
             self.turn(-1)
             self.rot()
+            #pygame.quit()
 
 
     # method to actually move the position of the car
     def update(self):
-        #self.rect.move_ip(self.xspeed, self.yspeed)
+
+        self.rays = self.set_rays()
         self.replace()
     
     def turn(self, dir = 1):
-        self.angle = (self.angle + dir * 15 ) % 360
+
+        prev_angle = self.angle
+
+        self.angle = (self.angle + dir * ANGLE ) % 360
+        print('angle', self.angle)
+        print("dirvect", self.direction_vector)
+        self.direction_vector = self.direction_vector.rotate_rad(math.radians(-1*dir*ANGLE))
+        print("dirvect", self.direction_vector)
+        print(" ")
     
     def rot(self):
         
         angle_ = self.angle
-
         nouv_vel = rotate_point_around_center(Point(0,0), Point(0, self.velvalue), angle_)
         self.xspeed, self.yspeed = nouv_vel.to_tuple()
 
@@ -93,14 +107,14 @@ class Car():
     
     # method to check if the position is authorised and replace it
     def replace(self):                              
-        if not self.is_position_valid():
-            
+        if not self.is_position_valid(): 
             new_image = pygame.transform.rotate(self.image_base, 0)
             self.rect = new_image.get_rect()
             self.rect.x = INIT_POS.x
             self.rect.y = INIT_POS.y
             self.image = new_image.copy()
-            self.angle = 15
+            self.angle = 0
+            self.as_turned = False
 
     def is_position_valid(self):
         x = self.rect.x
@@ -132,6 +146,9 @@ class Car():
 
     def draw_car(self, screen):
         screen.blit(self.image, self.rect)
+        for viz in self.rays:
+            point, dist = viz.track_intersection(self.track.get_walls())
+            viz.dray_ray(point, screen)
         
     def print_car(self):
         print(self.p1)
@@ -140,3 +157,7 @@ class Car():
         print(self.p4)
         print(" ")
     
+    def set_rays(self):
+        front = Vision(self.rect.centerx, self.rect.centery, self.direction_vector)
+        #back = Vision(self.rect.centerx, self.rect.centery, -self.direction_vector)
+        return [front]#, back]

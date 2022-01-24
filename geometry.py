@@ -1,5 +1,6 @@
 import pygame 
-import math 
+import math
+import numpy as np
 from constants import *
 
 
@@ -11,6 +12,9 @@ class Point(pygame.math.Vector2):
     
     def to_tuple(self):
         return (self.x, self.y)
+    
+    def dist(self, P):
+        return np.sqrt((self.x - P.x)**2 + (self.y - P.y)**2)
 
 
 # Code to check if segment AB and CD intersect
@@ -22,7 +26,12 @@ def intersect(A,B,C,D):  # returns True if there is an intersection
     return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
 
 def slope(p1, p2) :
-   return (p2.y - p1.y) * 1. / (p2.x - p1.x)
+    min_allowed = 1e-5   # guard against overflow
+    big_value = 1e10
+    if (p2.x - p1.x) < min_allowed:
+        return 2
+    else: 
+        return (p2.y - p1.y) * 1. / (p2.x - p1.x)
    
 def y_intercept(slope, p1) :
    return p1.y - 1. * slope * p1.x
@@ -43,13 +52,14 @@ def intersect_point(line1, line2) :
    y = m1 * x + b1
    y2 = m2 * x + b2
 
-   return (int(x),int(y))      # returns intersection point between 2 lines --> To exectute only if we have the existancy within the segment
+   return Point(x,y)     # returns intersection point between 2 lines --> To exectute only if we have the existancy within the segment
 
 # Code for rotations --> angle in radians
 
-def rotate_point_around_center(center,point,angle):
-    qx = center.x + math.cos(angle) * (point.x - center.x) - math.sin(angle) * (point.y - center.y)
-    qy = center.y + math.sin(angle) * (point.x - center.x) + math.cos(angle) * (point.y - center.y)
+def rotate_point_around_center(center,point,angle_):
+    angle = math.radians(angle_)
+    qx = center.x + math.cos(angle) * (point.x - center.x) + math.sin(angle) * (point.y - center.y)
+    qy = center.y + math.sin(angle) * (point.x - center.x) - math.cos(angle) * (point.y - center.y)
     q = Point(qx, qy)
     return q
 

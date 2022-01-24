@@ -6,6 +6,9 @@ BLACK = (0, 0, 0)
 GREY = (127, 127, 127)
 GREY_LIGHT = (190, 190, 190)
 RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
 
 
 # Window parameters
@@ -27,3 +30,5 @@ SIZE = 16
 INIT_POS = Point(0.85*DECAL*OFFSET*WIDTH , 0.8*DECAL*OFFSET*HEIGHT)
 #INIT_POS = Point(OFFSET*WIDTH , OFFSET*HEIGHT)
 #INIT_POS = Point(0,0)
+
+ANGLE = 45
