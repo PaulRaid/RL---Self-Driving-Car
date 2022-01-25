@@ -9,8 +9,6 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-
-
 # Window parameters
 
 HEIGHT = 480*2
@@ -29,11 +27,14 @@ NUM_WALLS = 14
 
 SIZE = 16
 INIT_POS = Point(0.85*DECAL*OFFSET*WIDTH , 0.8*DECAL*OFFSET*HEIGHT)
-
 ANGLE = 15
 INIT_VEL = 2
+NUM_ACTIONS = 9
+NUM_RAYS = 14
 
 # Drawing conditions
 DRAW_RAYS = True
 DRAW_PORTALS = True
 DRAW_SCORE = True
+
+#AI 

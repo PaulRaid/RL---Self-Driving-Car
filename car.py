@@ -47,7 +47,6 @@ class Car():
         self.last_actions = []
 
     # -- method to change the class parameters of the car
-    
     def modify(self, event):   
         vec = self.direction_vector.normalize()
         orth = pygame.math.Vector2(vec.y, -vec.x)                       
@@ -106,7 +105,8 @@ class Car():
             self.turn(-1)
             self.rot()
             pass
-        
+    
+    # -- method to call after action
     def act(self, action_chosen):
         if action_chosen == 0:     # action 0 : doing nothing
             pass
@@ -153,7 +153,6 @@ class Car():
             self.velvalue = 2 * self.velvalue
         else:
             self.velvalue = self.velvalue/2
-        #pass
 
     # -- method to actually move the position of the car
     def update(self):
@@ -199,7 +198,6 @@ class Car():
         self.rect.center = old_center
 
         self.image = new_image.copy()
-    
     
     # -- method to check if the position is authorised and replace it
     def replace(self):                              
