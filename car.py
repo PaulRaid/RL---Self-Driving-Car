@@ -1,3 +1,4 @@
+from tkinter import Toplevel
 import pygame
 from constants import * 
 import pygame.math
@@ -9,8 +10,10 @@ class Car():
         
         self.screen = screen
         self.track = track
+        self.portals = track.get_portals()
+        self.portals[0].set_active()
+        self.num_portal = 0 # the number of the current active portal
 
-        #self.rect = pygame.Rect((INIT_POS.x, INIT_POS.y), (2*SIZE, SIZE))
         self.image_base = pygame.Surface((2*SIZE, SIZE))
         self.image_base.set_colorkey(BLACK)
         self.image_base.fill(RED)
@@ -36,8 +39,15 @@ class Car():
         self.accel = 1
         
         self.rays = self.set_rays()    # array
+        
+        self.score = 0
+        self.score_obj = Score()
+        
+        self.current_observations = []
+        self.last_actions = []
 
-    # method to change the class parameters of the car
+    # -- method to change the class parameters of the car
+    
     def modify(self, event):   
         vec = self.direction_vector.normalize()
         orth = pygame.math.Vector2(vec.y, -vec.x)                       
@@ -59,18 +69,84 @@ class Car():
         if event.key == pygame.K_o:   # Turn Right
             self.turn(-1)
             self.rot()
-            vec = self.direction_vector.normalize()
             #pygame.quit()
         if event.key == pygame.K_0:     # action 0 : doing nothing
             pass
         if event.key == pygame.K_1:  # action 1 : accel
             self.accelerate()
             pass
-        if event.key == pygame.K_2:  # action 1 : deccelerate
+        if event.key == pygame.K_2:  # action 2 : decelerate
             self.accelerate(-1)
-            #pass
+            pass
+        if event.key == pygame.K_3:  # action 3 : Turn left
+            self.turn()
+            self.rot()
+            pass
+        if event.key == pygame.K_4:  # action 4 : Turn right
+            self.turn(-1)
+            self.rot()
+            pass
+        if event.key == pygame.K_5:  # action 5 : Acc + Turn left 
+            self.accelerate()
+            self.turn()
+            self.rot()
+            pass
+        if event.key == pygame.K_6:  # action 6 : Acc + Turn right 
+            self.accelerate()
+            self.turn(-1)
+            self.rot()
+            pass
+        if event.key == pygame.K_7:  # action 7 : Dec + Turn left 
+            self.accelerate(-1)
+            self.turn()
+            self.rot()
+            pass
+        if event.key == pygame.K_8:  # action 6 : Dec + Turn right 
+            self.accelerate(-1)
+            self.turn(-1)
+            self.rot()
+            pass
+        
+    def act(self, action_chosen):
+        if action_chosen == 0:     # action 0 : doing nothing
+            pass
+        if action_chosen == 1:  # action 1 : accel
+            self.accelerate()
+            pass
+        if action_chosen == 2:  # action 2 : decelerate
+            self.accelerate(-1)
+            pass
+        if action_chosen == 3:  # action 3 : Turn left
+            self.turn()
+            self.rot()
+            pass
+        if action_chosen == 4:  # action 4 : Turn right
+            self.turn(-1)
+            self.rot()
+            pass
+        if action_chosen == 5:  # action 5 : Acc + Turn left 
+            self.accelerate()
+            self.turn()
+            self.rot()
+            pass
+        if action_chosen == 6:  # action 6 : Acc + Turn right 
+            self.accelerate()
+            self.turn(-1)
+            self.rot()
+            pass
+        if action_chosen == 7:  # action 7 : Dec + Turn left 
+            self.accelerate(-1)
+            self.turn()
+            self.rot()
+            pass
+        if action_chosen == 8:  # action 6 : Dec + Turn right 
+            self.accelerate(-1)
+            self.turn(-1)
+            self.rot()
+            pass
+        self.last_actions.append(action_chosen)
 
-
+    # -- Acceleration of the car
     def accelerate(self, dir = 1):
         
         if dir == 1:
@@ -79,11 +155,9 @@ class Car():
             self.velvalue = self.velvalue/2
         #pass
 
-    # method to actually move the position of the car
+    # -- method to actually move the position of the car
     def update(self):
         vec = self.direction_vector.normalize()
-        
-        
         vec  = clamp_close_number(vec)
         
         vite = self.velvalue
@@ -92,12 +166,15 @@ class Car():
         
         self.rect.center = (self.rect.centerx + decalx , self.rect.centery + decaly)
         self.rays = self.set_rays()
+        self.set_portals()
         self.replace()
     
+    # -- method to turn the dir vector by ANGLE 
     def turn(self, dir = 1):
         self.angle = (self.angle + dir * ANGLE ) % 360
         self.direction_vector = self.direction_vector.rotate(-1*dir*ANGLE)
     
+    # -- method to effectively rotate the car
     def rot(self):
         
         angle_ = self.angle
@@ -124,7 +201,7 @@ class Car():
         self.image = new_image.copy()
     
     
-    # method to check if the position is authorised and replace it
+    # -- method to check if the position is authorised and replace it
     def replace(self):                              
         if not self.is_position_valid(): 
             
@@ -150,30 +227,76 @@ class Car():
             self.yspeed = 0
             self.velvalue = pygame.math.Vector2.length(Point(self.xspeed, self.yspeed))
             self.accel = 1
+            
+            # -- Reset active Portal
+            self.portals[self.num_portal].set_inactive()
+            self.portals[0].set_active()
+            self.num_portal = 0 # the number of the current active portal
+            
+            # -- Score for IA
+            self.score = self.score - 10
 
+    # -- Checks intersection with track walls
     def is_position_valid(self):
-        x = self.rect.x
-        y = self.rect.y
-        dirx = self.direction_vector[0]
-        diry = self.direction_vector[1]
-
-        # To remember: the perpendicular clockwith (with our axes config) to vector (x, y) is (-y, x)
+        x = self.rect.centerx
+        y = self.rect.centery
 
         s = SIZE
+        
+        u = self.direction_vector.normalize()
+        v = pygame.math.Vector2(u.y, -u.x)    # Anticlock wise
+        s = SIZE
+        u = s*u
+        v = s*v/2
+        
+        topleft = Point(x - u.x + v.x, y - u.y + v.y)
+        topright = Point(x + u.x + v.x, y + u.y + v.y)
+        bottomleft = Point(x - u.x - v.x, y - u.y - v.y)
+        bottomright = Point(x + u.x - v.x, y + u.y - v.y)
 
-        up = [self.rect.topleft, self.rect.topright]
-        down = [self.rect.bottomleft, self.rect.bottomright]
-        left = [self.rect.topleft, self.rect.bottomleft]
-        right = [self.rect.topright, self.rect.bottomright]
+        up = [topleft, topright]
+        down = [bottomleft, bottomright]
+        left = [topleft, bottomleft]
+        right = [topright, bottomright]
         sides = [up, down,left,right]
         res = True
         for a in sides:
             for wall in self.track.get_walls():
-                p1 = Point(a[0][0], a[0][1])
-                p2 = Point(a[1][0], a[1][1])
-                res = res and not intersect(p1, p2, wall.get_start(), wall.get_last())
+                res = res and not intersect(a[0], a[1], wall.get_start(), wall.get_last())
         return res
 
+    def set_portals(self):
+        x = self.rect.centerx
+        y = self.rect.centery
+
+        s = SIZE
+        
+        u = self.direction_vector.normalize()
+        v = pygame.math.Vector2(u.y, -u.x)    # Anticlock wise
+        s = SIZE
+        u = s*u
+        v = s*v/2
+        
+        topleft = Point(x - u.x + v.x, y - u.y + v.y)
+        topright = Point(x + u.x + v.x, y + u.y + v.y)
+        bottomleft = Point(x - u.x - v.x, y - u.y - v.y)
+        bottomright = Point(x + u.x - v.x, y + u.y - v.y)
+
+        up = [topleft, topright]
+        down = [bottomleft, bottomright]
+        left = [topleft, bottomleft]
+        right = [topright, bottomright]
+        sides = [up, down,left,right]
+        res = True
+        for a in sides:
+            current_active = self.portals[self.num_portal]
+            if intersect(a[0], a[1], current_active.get_start(), current_active.get_last()):
+                self.portals[self.num_portal].set_inactive()
+                self.num_portal = (self.num_portal + 1 ) % NUM_WALLS 
+                self.portals[self.num_portal].set_active()
+                self.score +=1
+    
+    # -- To draw the car, the rays, and the portals
     def draw_car(self, screen):
         screen.blit(self.image, self.rect)
         
@@ -181,7 +304,17 @@ class Car():
             point, dist = viz.track_intersection(self.track.get_walls())
             if DRAW_RAYS:
                 viz.dray_ray(point, screen)
-        
+        if DRAW_PORTALS:
+            for portal in self.portals:
+                portal.draw_portal(screen)
+        if DRAW_SCORE:
+            self.score_obj.draw_score(screen, self.score)
+     
+    # -- getter for AI    
+    def get_observations(self):
+        return self.current_observations
+    
+    # -- prints 4 coords of the car
     def print_car(self):
         print(self.p1)
         print(self.p2)
@@ -189,6 +322,7 @@ class Car():
         print(self.p4)
         print(" ")
     
+    # -- To set up the rays leaving the car
     def set_rays(self):
         u = self.direction_vector.normalize()
         v = pygame.math.Vector2(u.y, -u.x)    # Anticlock wise

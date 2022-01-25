@@ -86,3 +86,13 @@ def clamp_close_number(vec):
     if abs(vecy-rvecy) < 1e-5:
         vecy = rvecy
     return pygame.math.Vector2(vecx, vecy)
+
+class Score:
+    def __init__(self) -> None:
+        self.font = pygame.font.Font('freesansbold.ttf', 32)
+    
+    def draw_score(self, screen, score):
+        text = self.font.render(str(score), True, (0, 255, 0))
+        textRect = text.get_rect()
+        textRect.center = (32,32)
+        screen.blit(text, textRect)

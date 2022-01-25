@@ -23,6 +23,7 @@ FPS = 60
 
 OFFSET = 0.1
 DECAL = 2
+NUM_WALLS = 14
 
 # Car parameters
 
@@ -34,3 +35,5 @@ INIT_VEL = 2
 
 # Drawing conditions
 DRAW_RAYS = True
+DRAW_PORTALS = True
+DRAW_SCORE = True
