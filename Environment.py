@@ -29,9 +29,8 @@ while True:
     
     driver.update()
     
-    
     track.draw_track()
     driver.draw_car(screen)
-    driver.print_car()
+    #driver.print_car()
     pygame.display.update()
 

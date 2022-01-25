@@ -68,3 +68,21 @@ def rotate_rect(pt1, pt2, pt3, pt4, angle):
     pt4 = pt4.rotate(angle)
 
     return pt1, pt2, pt3, pt4
+
+
+def arrondiSup(x):
+    if x<0:
+        return math.floor(x)
+    else:
+        return math.ceil(x)
+
+def clamp_close_number(vec):
+    vecx = vec.x
+    vecy = vec.y
+    rvecx = round(vecx)
+    rvecy = round(vecy)
+    if abs(vecx-rvecx) < 1e-5:
+        vecx = rvecx
+    if abs(vecy-rvecy) < 1e-5:
+        vecy = rvecy
+    return pygame.math.Vector2(vecx, vecy)
