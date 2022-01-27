@@ -36,15 +36,18 @@ class Car():
         self.xspeed = INIT_VEL
         self.yspeed = 0
         self.velvalue = pygame.math.Vector2.length(Point(self.xspeed, self.yspeed))
-        self.accel = 1
+        self.velmax = VELMAX
         
         self.rays = self.set_rays()    # array
         
         self.score = 0
         self.score_obj = Score()
+        self.last_reward = 0
         
-        self.current_observations = []
+        self.current_observations = np.zeros(NUM_RAYS+1)
         self.last_actions = []
+        
+        self.viz_points=[Point(0,0) for a in range(NUM_RAYS)]
 
     # -- method to change the class parameters of the car
     def modify(self, event):   
@@ -108,6 +111,7 @@ class Car():
     
     # -- method to call after action
     def act(self, action_chosen):
+        old_state = self.get_observations()
         if action_chosen == 0:     # action 0 : doing nothing
             pass
         if action_chosen == 1:  # action 1 : accel
@@ -144,7 +148,14 @@ class Car():
             self.turn(-1)
             self.rot()
             pass
+        terminal = self.update()
         self.last_actions.append(action_chosen)
+        if terminal:
+            new_state = self.get_observations()
+        else: 
+            new_state = self.get_observations()
+        reward = self.get_reward()
+        return old_state, new_state, reward, action_chosen, terminal
 
     # -- Acceleration of the car
     def accelerate(self, dir = 1):
@@ -153,6 +164,9 @@ class Car():
             self.velvalue = 2 * self.velvalue
         else:
             self.velvalue = self.velvalue/2
+        
+        if self.velvalue > self.velmax:
+            self.velvalue = self.velmax
 
     # -- method to actually move the position of the car
     def update(self):
@@ -165,8 +179,8 @@ class Car():
         
         self.rect.center = (self.rect.centerx + decalx , self.rect.centery + decaly)
         self.rays = self.set_rays()
-        self.set_portals()
-        self.replace()
+        self.set_vision()
+        return self.replace()
     
     # -- method to turn the dir vector by ANGLE 
     def turn(self, dir = 1):
@@ -199,7 +213,7 @@ class Car():
 
         self.image = new_image.copy()
     
-    # -- method to check if the position is authorised and replace it
+    # -- method to check if the position is authorised and replace it # Returns True if it has hurted a wall (for Q learning training)
     def replace(self):                              
         if not self.is_position_valid(): 
             
@@ -232,7 +246,17 @@ class Car():
             self.num_portal = 0 # the number of the current active portal
             
             # -- Score for IA
-            self.score = self.score - 10
+            self.score += REWARD_WALL
+            self.last_reward = REWARD_WALL
+            return 1
+        
+        if not self.set_portals():  # updates the portals in place: if nothing has changed --> give life reward
+            
+            # -- Score for IA
+            self.score += REWARD_BASE
+            self.last_reward = REWARD_BASE
+        
+        return 0
 
     # -- Checks intersection with track walls
     def is_position_valid(self):
@@ -263,6 +287,7 @@ class Car():
                 res = res and not intersect(a[0], a[1], wall.get_start(), wall.get_last())
         return res
 
+    # -- Actualises the current active portal, returns true if it has done something 
     def set_portals(self):
         x = self.rect.centerx
         y = self.rect.centery
@@ -285,21 +310,32 @@ class Car():
         left = [topleft, bottomleft]
         right = [topright, bottomright]
         sides = [up, down,left,right]
-        res = True
+        res = False
         for a in sides:
             current_active = self.portals[self.num_portal]
             if intersect(a[0], a[1], current_active.get_start(), current_active.get_last()):
                 self.portals[self.num_portal].set_inactive()
                 self.num_portal = (self.num_portal + 1 ) % NUM_WALLS 
                 self.portals[self.num_portal].set_active()
-                self.score +=1
+                self.score += REWARD_PORTAL
+                self.last_reward = REWARD_PORTAL
+                res = True
+        return res
     
+    # -- Actualises the current points, and distances for vision
+    def set_vision(self):
+        for i,viz in enumerate(self.rays):
+            point, dist =viz.track_intersection(self.track.get_walls())
+            self.viz_points[i] = point
+            self.current_observations[i] = (LARG_PISTE - dist)/LARG_PISTE      # -> to normalise the current observation between 0, 1
+        self.current_observations[NUM_RAYS] = self.velvalue/self.velmax
+                
     # -- To draw the car, the rays, and the portals
     def draw_car(self, screen):
         screen.blit(self.image, self.rect)
         
-        for viz in self.rays:
-            point, dist = viz.track_intersection(self.track.get_walls())
+        for i,viz in enumerate(self.rays):
+            point = self.viz_points[i]
             if DRAW_RAYS:
                 viz.dray_ray(point, screen)
         if DRAW_PORTALS:
@@ -312,12 +348,14 @@ class Car():
     def get_observations(self):
         return self.current_observations
     
+    # -- getter for AI
+    def get_reward(self):
+        return self.last_reward
+        
     # -- prints 4 coords of the car
     def print_car(self):
-        print(self.p1)
-        print(self.p2)
-        print(self.p3)
-        print(self.p4)
+        print("Reward", self.get_reward())
+        print("Observation", self.get_observations())
         print(" ")
     
     # -- To set up the rays leaving the car

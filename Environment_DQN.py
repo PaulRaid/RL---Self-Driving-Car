@@ -4,6 +4,7 @@ from utils_track import *
 from car import *
 from constants import *
 from geometry import *
+from DeepQN import DQNAgent
 
 
 successes, failures = pygame.init()
@@ -17,6 +18,8 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 track = Track(screen)
 driver = Car(screen, track)
 
+agent = DQNAgent()
+
 # Animation Loop
 while True:
     clock.tick(FPS)
@@ -27,10 +30,18 @@ while True:
         elif event.type == pygame.KEYDOWN:
             driver.modify(event)
     
-    driver.update()
+    state = driver.get_observations()
+    
+    recom_action = agent.act(state)
+    
+    old_state, issue, reward, action_chosen, terminal = driver.act(recom_action)
+    
+    agent.remember(state, action_chosen, reward, issue, terminal)
+    
+    agent.driving_lessons()
     
     track.draw_track()
     driver.draw_car(screen)
-    driver.print_car()
+    #driver.print_car()
     pygame.display.update()
 
