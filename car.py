@@ -315,7 +315,7 @@ class Car():
             current_active = self.portals[self.num_portal]
             if intersect(a[0], a[1], current_active.get_start(), current_active.get_last()):
                 self.portals[self.num_portal].set_inactive()
-                self.num_portal = (self.num_portal + 1 ) % NUM_WALLS 
+                self.num_portal = (self.num_portal + 1 ) % len(self.portals) 
                 self.portals[self.num_portal].set_active()
                 self.score += REWARD_PORTAL
                 self.last_reward = REWARD_PORTAL

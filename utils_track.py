@@ -107,6 +107,16 @@ class Track:
             pt2 = eval('wall' + str(i)+str(1)).get_start()
             self.poly_ext.append(pt1)
             self.poly_int.append(pt2)
+        
+        points_supportext = []
+        points_supportint = []
+        for i, a in enumerate(self.poly_ext):
+            points_supportext += subdivise(a, self.poly_ext[ (i+1) % NUM_WALLS ] , 3)
+            points_supportint += subdivise(self.poly_int[i], self.poly_int[ (i+1) % NUM_WALLS ] , 3)
+        
+        for i,a in enumerate(points_supportext):
+            pt1 = a
+            pt2 = points_supportint[i]
             self.list_portals.append(Portal(pt1.x, pt1.y, pt2.x, pt2.y))
 
     def draw_track(self):

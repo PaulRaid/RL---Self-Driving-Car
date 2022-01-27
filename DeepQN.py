@@ -9,13 +9,13 @@ import random
 
 
 class DQNSolver(nn.Module):
-    def __init__(self, input_size = NUM_RAYS+1, n_actions = NUM_ACTIONS , dropout = 0.2) -> None:
+    def __init__(self, input_size = NUM_RAYS+1, n_actions = NUM_ACTIONS , dropout = 0.2, hidden_size = 128) -> None:
         super(DQNSolver, self).__init__()
         self.fc = nn.Sequential(
-            nn.Linear(input_size, 512),
-            nn.ReLU(),
+            nn.Linear(input_size, hidden_size),
             nn.Dropout(dropout),
-            nn.Linear(512, n_actions),
+            nn.ReLU(),
+            nn.Linear(hidden_size, n_actions),
             nn.Softmax()
         )
     
@@ -23,7 +23,7 @@ class DQNSolver(nn.Module):
         return self.fc(x)
 
 class DQNAgent: 
-    def __init__(self, state_space = NUM_RAYS+1, action_space = NUM_ACTIONS, dropout = 0.2,  pretrained = False, lr = 0.00025, gamma=0.9, max_mem_size = 30000, exploration_rate = 1.0, exploration_decay = 0.99, exploration_min = 0.1,  batch_size = 32) -> None:
+    def __init__(self, state_space = NUM_RAYS+1, action_space = NUM_ACTIONS, dropout = 0.2, hidden_size = 128,  pretrained = False, lr = 0.00025, gamma=0.9, max_mem_size = 30000, exploration_rate = 1.0, exploration_decay = 0.99, exploration_min = 0.1,  batch_size = 32) -> None:
          self.state_space = state_space
          self.action_space = action_space
          self.pretrained = pretrained
@@ -31,13 +31,14 @@ class DQNAgent:
          
          self.dqn = DQNSolver(input_size =state_space, 
                               n_actions=action_space,
-                              dropout=dropout
+                              dropout=dropout,
+                              hidden_size=hidden_size
                               ).to(self.device)
          
          self.lr = lr
          
          self.optimizer = torch.optim.Adam(self.dqn.parameters(), lr = self.lr)
-         self.loss = nn.SmoothL1Loss().to(self.device)
+         self.loss = nn.MSELoss().to(self.device)
          self.gamma = gamma
          
          self.memory_size = max_mem_size
@@ -81,6 +82,11 @@ class DQNAgent:
         terminal_batch = self.rem_terminals[indices]
         
         return state_batch,action_batch,reward_batch,issue_batch, terminal_batch
+
+    def print_infos(self):
+        if PRINT_INFOS and (self.current_position % 100 ==0):
+            print("\n------------Training on " + self.device + " epoch " + str(self.current_position) + " -------------")
+            print("exploration_rate", self.exploration_rate)
        
     def driving_lessons(self):
         
@@ -109,5 +115,7 @@ class DQNAgent:
         
         self.exploration_rate *= self.exploration_decay
         self.exploration_rate = max(self.exploration_rate, self.exploration_min)
+        
+        self.print_infos()
         
     

@@ -1,7 +1,9 @@
+from turtle import width
 import pygame 
 import math
 import numpy as np
-from constants import *
+from torch import nuclear_norm
+#from constants import *
 from numpy.linalg import inv
 
 
@@ -18,7 +20,7 @@ class Point(pygame.math.Vector2):
         return np.sqrt((self.x - P.x)**2 + (self.y - P.y)**2)
 
 
-# Code to check if segment AB and CD intersect
+# -- Code to check if segment AB and CD intersect
 
 def ccw(A,B,C):
     return (C.y-A.y) * (B.x-A.x) > (B.y-A.y) * (C.x-A.x)
@@ -41,6 +43,16 @@ def intersect_point_fixed(line1, line2):
     x = det(d, xdiff) / div
     y = det(d, ydiff) / div
     return Point(x, y)
+
+# -- Code to subdivise a segment (pt1, pt2) in n parts
+
+def subdivise(p1, p2, n_sub):
+    vec_dir = pygame.math.Vector2(p2.x - p1.x, p2.y - p1.y)
+    vec_dir = vec_dir/n_sub
+    res = []
+    for i in range(n_sub+1):
+        res.append(p1 + i*vec_dir)
+    return res
 
 
 #-----

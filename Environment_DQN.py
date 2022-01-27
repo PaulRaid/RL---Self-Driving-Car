@@ -19,15 +19,17 @@ track = Track(screen)
 driver = Car(screen, track)
 
 agent = DQNAgent(state_space = NUM_RAYS+1, 
-                 action_space = NUM_ACTIONS, dropout = 0.2,  
+                 action_space = NUM_ACTIONS, 
+                 dropout = 0.2,  
+                 hidden_size= 512,
                  pretrained = False, 
                  lr = 0.00025, 
-                 gamma=0.9, 
+                 gamma=0.99, 
                  max_mem_size = 30000, 
-                 exploration_rate = 1.0, 
-                 exploration_decay = 0.99, 
-                 exploration_min = 0.1,  
-                 batch_size = 32)
+                 exploration_rate = .1, 
+                 exploration_decay = .999995, 
+                 exploration_min = 0.01,  
+                 batch_size = 256)
 
 # Animation Loop
 while True:

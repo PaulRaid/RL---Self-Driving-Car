@@ -32,7 +32,7 @@ ANGLE = 15
 INIT_VEL = 2
 VELMAX = 15
 
-NUM_ACTIONS = 9
+NUM_ACTIONS = 5
 NUM_RAYS = 14
 
 # Drawing conditions
@@ -40,8 +40,11 @@ DRAW_RAYS = True
 DRAW_PORTALS = True
 DRAW_SCORE = True
 
+
 #AI 
 
 REWARD_PORTAL = 1
 REWARD_WALL = -10
 REWARD_BASE = 0
+
+PRINT_INFOS = True
