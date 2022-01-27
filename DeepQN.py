@@ -23,29 +23,32 @@ class DQNSolver(nn.Module):
         return self.fc(x)
 
 class DQNAgent: 
-    def __init__(self, max_mem_size = 30000, batch_size = 32) -> None:
-         self.state_space = 0
-         self.action_space = NUM_ACTIONS
-         self.pretrained = False
+    def __init__(self, state_space = NUM_RAYS+1, action_space = NUM_ACTIONS, dropout = 0.2,  pretrained = False, lr = 0.00025, gamma=0.9, max_mem_size = 30000, exploration_rate = 1.0, exploration_decay = 0.99, exploration_min = 0.1,  batch_size = 32) -> None:
+         self.state_space = state_space
+         self.action_space = action_space
+         self.pretrained = pretrained
          self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
          
-         self.dqn = DQNSolver().to(self.device)
+         self.dqn = DQNSolver(input_size =state_space, 
+                              n_actions=action_space,
+                              dropout=dropout
+                              ).to(self.device)
          
-         self.lr = 0.00025
+         self.lr = lr
          
          self.optimizer = torch.optim.Adam(self.dqn.parameters(), lr = self.lr)
          self.loss = nn.SmoothL1Loss().to(self.device)
-         self.gamma = 0.9
+         self.gamma = gamma
          
          self.memory_size = max_mem_size
-         self.exploration_rate = 1.0      # To preserve from getting stuck
-         self.exploration_decay = 0.99
-         self.exploration_min = 0.1
+         self.exploration_rate = exploration_rate      # To preserve from getting stuck
+         self.exploration_decay = exploration_decay
+         self.exploration_min = exploration_min
          
-         self.rem_states = torch.zeros(max_mem_size, NUM_RAYS + 1)
+         self.rem_states = torch.zeros(max_mem_size, state_space)
          self.rem_actions = torch.zeros(max_mem_size, 1)
          self.rem_rewards = torch.zeros(max_mem_size, 1)
-         self.rem_issues = torch.zeros(max_mem_size, NUM_RAYS + 1)
+         self.rem_issues = torch.zeros(max_mem_size, state_space)
          self.rem_terminals = torch.zeros(max_mem_size, 1)
          
          self.current_position = 0
@@ -54,7 +57,7 @@ class DQNAgent:
          
     def act(self, state):
         if random.random() < self.exploration_rate:
-            return random.randint(0, NUM_ACTIONS-1)
+            return random.randint(0, self.action_space-1)
         else: 
             state = torch.from_numpy(state).float()
             action = self.dqn(state.to(self.device)).argmax()
