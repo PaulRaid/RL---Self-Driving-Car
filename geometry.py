@@ -104,7 +104,8 @@ class Score:
         self.font = pygame.font.Font('freesansbold.ttf', 32)
     
     def draw_score(self, screen, score):
-        text = self.font.render(str(score), True, (0, 255, 0))
+        text = self.font.render("Score : " + str(score), True, (0, 255, 0))
         textRect = text.get_rect()
-        textRect.center = (32,32)
+        textRect.x= 10
+        textRect.y= 10
         screen.blit(text, textRect)

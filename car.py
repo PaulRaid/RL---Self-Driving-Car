@@ -37,6 +37,7 @@ class Car():
         self.yspeed = 0
         self.velvalue = pygame.math.Vector2.length(Point(self.xspeed, self.yspeed))
         self.velmax = VELMAX
+        self.acc = INIT_ACC
         
         self.rays = self.set_rays()    # array
         
@@ -114,19 +115,19 @@ class Car():
         old_state = self.get_observations()
         if action_chosen == 0:     # action 0 : doing nothing
             pass
-        if action_chosen == 1:  # action 1 : accel
-            self.accelerate()
-            pass
-        if action_chosen == 2:  # action 2 : decelerate
-            self.accelerate(-1)
-            pass
-        if action_chosen == 3:  # action 3 : Turn left
+        if action_chosen == 1:  # action 1 : Turn left
             self.turn()
             self.rot()
             pass
-        if action_chosen == 4:  # action 4 : Turn right
+        if action_chosen == 2:  # action 2 : Turn right
             self.turn(-1)
             self.rot()
+            pass
+        if action_chosen == 3:  # action 3 : accel
+            self.accelerate()
+            pass
+        if action_chosen == 4:  # action 4 : decelerate
+            self.accelerate(-1)
             pass
         if action_chosen == 5:  # action 5 : Acc + Turn left 
             self.accelerate()
@@ -158,15 +159,19 @@ class Car():
         return old_state, new_state, reward, action_chosen, terminal
 
     # -- Acceleration of the car
-    def accelerate(self, dir = 1):
+    def accelerate(self, dir = 1):    
+        acc = 2 * self.acc
         
         if dir == 1:
-            self.velvalue = 2 * self.velvalue
+            self.velvalue = self.velvalue + acc
         else:
-            self.velvalue = self.velvalue/2
+            self.velvalue = self.velvalue - acc
         
         if self.velvalue > self.velmax:
             self.velvalue = self.velmax
+            
+        if self.velvalue < -self.velmax:
+            self.velvalue = -self.velmax
 
     # -- method to actually move the position of the car
     def update(self):
@@ -375,18 +380,21 @@ class Car():
         res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(-15))) # front up 30
         res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(-30))) # front up 30
         res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(-60))) # front up 60
-        res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(15))) # front up down 15
+        #res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, self.direction_vector.rotate(15))) # front up down 15
         
         
         res.append(Vision(self.rect.centerx + v.x, self.rect.centery + v.y, v)) # side up 90
+        res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y, v))
+        
         res.append(Vision(self.rect.centerx - v.x, self.rect.centery - v.y, -v)) # side down 90
+        res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, -v))
         
         
         res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector)) # down 
         res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(15))) # front down  30
         res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(30))) # front down  30
         res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(60))) # front down  60
-        res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(-15))) # front down up 60
+       # res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y, self.direction_vector.rotate(-15))) # front down up 60
         
         
         return res

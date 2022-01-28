@@ -1,69 +1,60 @@
 import pygame
-import numpy as np
+from pygame.locals import *
+from utils_track import *
+from car import *
+from constants import *
+from geometry import *
+from DeepQN import DQNAgent
 
 
-class Point(pygame.math.Vector2):
-    def __init__(self, x, y) -> None:
-        super().__init__()
-        self.x = x
-        self.y = y 
-    
-    def to_tuple(self):
-        return (self.x, self.y)
-    
-    def dist(self, P):
-        return np.sqrt((self.x - P.x)**2 + (self.y - P.y)**2)
+'''successes, failures = pygame.init()
+print("{0} successes and {1} failures".format(successes, failures))
 
-def intersect_point_fixed(line1, line2):                    # ax + by + c
-    # for line1
-    vecdir1 = pygame.math.Vector2(line1[1].x-line1[0].x, line1[1].y-line1[0].y).normalize()
-    a_1 = vecdir1.x
-    b_1 = - vecdir1.y
-    c_1 = -1 * ( a_1 * line1[0].x + b_1 * line1[0].y)
-    
-    print("lin1", a_1, b_1, c_1)
-    
-    # for line2
-    vecdir2 = pygame.math.Vector2(line2[1].x-line2[0].x, line2[1].y-line2[0].y)
-    vecdir2.normalize_ip()
-    a_2 = vecdir2.x
-    b_2 = - vecdir2.y
-    c_2 = -1 * ( a_2 * line2[0].x + b_2 * line2[0].y)
-    
-    print("lin2", a_2, b_2, c_2)
+# Game intialisation
+clock = pygame.time.Clock()
+'''
 
-    
-    mat_coef = np.array([[a_1, b_1], [a_2, b_2]])
-    res_c = np.array([c_1, c_2])
-   
-    
-    mat_inv = np.linalg.inv(mat_coef)
-    res = np.array([c_1, c_2])
-    
-    pt_final = np.matmul(mat_inv, res)
-    
-    print(mat_inv)
-    print(res)
-    
-    print('pt fin', pt_final)
-    
-    
-def line_intersection(line1, line2):
-    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
+track = Track(screen)
+driver = Car(screen, track)
 
-    div = det(xdiff, ydiff)
-    if div == 0:
-       raise Exception('lines do not intersect')
+agent = DQNAgent(state_space = NUM_RAYS+1, 
+                 action_space = NUM_ACTIONS, 
+                 dropout = 0.2,  
+                 hidden_size= 512,
+                 pretrained = False, 
+                 lr = 0.05, 
+                 gamma=0.99, 
+                 max_mem_size = 30000, 
+                 exploration_rate = .1, 
+                 exploration_decay = .999995, 
+                 exploration_min = 0.01,  
+                 batch_size = 256)
 
-    d = (det(*line1), det(*line2))
-    x = det(d, xdiff) / div
-    y = det(d, ydiff) / div
-    return x, y
+# Animation Loop
+while True:
+    #clock.tick()
+    screen.fill(BLACK)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            agent.save("NN2")
+            quit()  
+        elif event.type == pygame.KEYDOWN:
+            driver.modify(event)
+    
+    state = driver.get_observations()
+    
+    recom_action = agent.act(state)
+    
+    old_state, issue, reward, action_chosen, terminal = driver.act(recom_action)
+    
+    agent.remember(state, action_chosen, reward, issue, terminal)
+    
+    agent.driving_lessons()
+    
+    #track.draw_track()
+    #driver.draw_car(screen)
+    #driver.print_car()
+    #pygame.display.update()
 
-
-testp = Point(200, 300)
-print(line_intersection([testp, Point(testp.x + 10000, testp.y)], [Point(1000,0), Point(800, 1000)]))

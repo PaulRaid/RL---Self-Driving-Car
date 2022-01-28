@@ -20,24 +20,25 @@ driver = Car(screen, track)
 
 agent = DQNAgent(state_space = NUM_RAYS+1, 
                  action_space = NUM_ACTIONS, 
-                 dropout = 0.2,  
-                 hidden_size= 512,
+                 dropout = 0,  
+                 hidden_size= 256,
                  pretrained = False, 
-                 lr = 0.00025, 
-                 gamma=0.99, 
-                 max_mem_size = 30000, 
-                 exploration_rate = .1, 
-                 exploration_decay = .999995, 
-                 exploration_min = 0.01,  
+                 lr = 0.001, 
+                 gamma=0.95, 
+                 max_mem_size = 5000, 
+                 exploration_rate = 1, 
+                 exploration_decay = .9999, 
+                 exploration_min = 0.1,  
                  batch_size = 256)
 
 # Animation Loop
 while True:
-    clock.tick(FPS)
+    clock.tick()
     screen.fill(BLACK)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            quit()
+            agent.save("NN")
+            quit()  
         elif event.type == pygame.KEYDOWN:
             driver.modify(event)
     

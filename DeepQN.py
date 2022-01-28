@@ -6,6 +6,7 @@ import numpy as np
 from car import * 
 from constants import *
 import random
+import pickle 
 
 
 class DQNSolver(nn.Module):
@@ -53,6 +54,7 @@ class DQNAgent:
          self.rem_terminals = torch.zeros(max_mem_size, 1)
          
          self.current_position = 0
+         self.is_full = 0
          
          self.batch_size = batch_size
          
@@ -61,7 +63,7 @@ class DQNAgent:
             return random.randint(0, self.action_space-1)
         else: 
             state = torch.from_numpy(state).float()
-            action = self.dqn(state.to(self.device)).argmax()
+            action = self.dqn(state.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
             return action  
         
     def remember(self, state, action, reward, issue, terminal):
@@ -70,10 +72,12 @@ class DQNAgent:
         self.rem_rewards[self.current_position] = torch.tensor(reward).float()
         self.rem_issues[self.current_position] = torch.from_numpy(issue).float()
         self.rem_terminals[self.current_position] = torch.tensor(terminal).float()
+        
         self.current_position = (self.current_position + 1) % self.memory_size
+        self.is_full = min(self.is_full +1, self.memory_size)
     
     def compute_batch(self):
-        indices = random.choices(range(self.current_position), k = self.batch_size)
+        indices = random.choices(range(self.is_full), k = self.batch_size)
         
         state_batch = self.rem_states[indices]
         action_batch = self.rem_actions[indices]
@@ -83,10 +87,14 @@ class DQNAgent:
         
         return state_batch,action_batch,reward_batch,issue_batch, terminal_batch
 
-    def print_infos(self):
+    def print_infos(self, action, target, current):
         if PRINT_INFOS and (self.current_position % 100 ==0):
             print("\n------------Training on " + self.device + " epoch " + str(self.current_position) + " -------------")
             print("exploration_rate", self.exploration_rate)
+            #print("Prediction for this step", action)
+            #print("Target for this step", action)
+            #print("Current for this step", action)
+
        
     def driving_lessons(self):
         
@@ -104,7 +112,7 @@ class DQNAgent:
         issue = issue.to(self.device)
         term = term.to(self.device)
         
-        target = reward + torch.mul(self.gamma * self.dqn(issue).max(1).values , 1-term)
+        target = reward + torch.mul(self.gamma * self.dqn(issue).max(1).values.unsqueeze(1) , 1-term)
         current = self.dqn(state).gather(1, action.long())
         
         loss = self.loss(current, target)
@@ -116,6 +124,17 @@ class DQNAgent:
         self.exploration_rate *= self.exploration_decay
         self.exploration_rate = max(self.exploration_rate, self.exploration_min)
         
-        self.print_infos()
+        self.print_infos(action, target, current)
         
+    def save(self, name):
+        torch.save(self.dqn.state_dict(), name+ "/DQN.pt")  
+        torch.save(self.rem_states,  name+ "/rem_states.pt")
+        torch.save(self.rem_actions, name+ "/rem_actions.pt")
+        torch.save(self.rem_issues, name+ "/rem_issues.pt")
+        torch.save(self.rem_rewards, name+ "/rem_rewards.pt")
+        torch.save(self.rem_terminals,   name+ "/rem_terminals.pt")
+        with open(name+ "/ending_position.pkl", "wb") as f:
+            pickle.dump(self.current_position, f)
+        with open(name+ "/num_in_queue.pkl", "wb") as f:
+            pickle.dump(self.is_full, f)
     
