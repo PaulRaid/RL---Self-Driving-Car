@@ -5,14 +5,18 @@ import pygame.math
 from geometry import *
 from oberv import *
 
+import gym 
+
+
+
 class Car():
     def __init__(self, screen, track):
         
         self.screen = screen
         self.track = track
         self.portals = track.get_portals()
-        self.portals[0].set_active()
-        self.num_portal = 0 # the number of the current active portal
+        self.portals[FIRST_PORTAL].set_active()
+        self.num_portal = FIRST_PORTAL # the number of the current active portal
 
         self.image_base = pygame.Surface((2*SIZE, SIZE))
         self.image_base.set_colorkey(BLACK)
@@ -45,6 +49,7 @@ class Car():
         self.score_obj = Score()
         self.last_reward = 0
         
+        self.old_observations = np.zeros(NUM_RAYS+1)
         self.current_observations = np.zeros(NUM_RAYS+1)
         self.last_actions = []
         
@@ -112,7 +117,7 @@ class Car():
     
     # -- method to call after action
     def act(self, action_chosen):
-        old_state = self.get_observations()
+        old_state, t = self.get_observations()
         if action_chosen == 0:     # action 0 : doing nothing
             pass
         if action_chosen == 1:  # action 1 : Turn left
@@ -152,9 +157,9 @@ class Car():
         terminal = self.update()
         self.last_actions.append(action_chosen)
         if terminal:
-            new_state = self.get_observations()
+            new_state, t = self.get_observations()
         else: 
-            new_state = self.get_observations()
+            new_state, t = self.get_observations()
         reward = self.get_reward()
         return old_state, new_state, reward, action_chosen, terminal
 
@@ -219,8 +224,8 @@ class Car():
         self.image = new_image.copy()
     
     # -- method to check if the position is authorised and replace it # Returns True if it has hurted a wall (for Q learning training)
-    def replace(self):                              
-        if not self.is_position_valid(): 
+    def replace(self, reset = False):                              
+        if not self.is_position_valid() or reset: 
             
             # -- Reset Object
             
@@ -247,8 +252,8 @@ class Car():
             
             # -- Reset active Portal
             self.portals[self.num_portal].set_inactive()
-            self.portals[0].set_active()
-            self.num_portal = 0 # the number of the current active portal
+            self.portals[FIRST_PORTAL].set_active()
+            self.num_portal = FIRST_PORTAL # the number of the current active portal
             
             # -- Score for IA
             self.score += REWARD_WALL
@@ -260,7 +265,6 @@ class Car():
             # -- Score for IA
             self.score += REWARD_BASE
             self.last_reward = REWARD_BASE
-        
         return 0
 
     # -- Checks intersection with track walls
@@ -332,8 +336,10 @@ class Car():
         for i,viz in enumerate(self.rays):
             point, dist =viz.track_intersection(self.track.get_walls())
             self.viz_points[i] = point
-            self.current_observations[i] = (LARG_PISTE - dist)/LARG_PISTE      # -> to normalise the current observation between 0, 1
-        self.current_observations[NUM_RAYS] = self.velvalue/self.velmax
+            self.current_observations[i] = (LARG_PISTE - dist)/LARG_PISTE  # -> to normalise the current observation between 0, 1
+            if self.current_observations[i] == -np.inf:
+                self.current_observations[i] = 1
+        self.current_observations[NUM_RAYS] = 0.5 + self.velvalue/(2*VELMAX)
                 
     # -- To draw the car, the rays, and the portals
     def draw_car(self, screen):
@@ -351,12 +357,13 @@ class Car():
      
     # -- getter for AI    
     def get_observations(self):
-        return self.current_observations
+        return self.current_observations.copy(), 0
     
     # -- getter for AI
     def get_reward(self):
         return self.last_reward
-        
+
+
     # -- prints 4 coords of the car
     def print_car(self):
         print("Reward", self.get_reward())

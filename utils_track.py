@@ -111,9 +111,13 @@ class Track:
         points_supportext = []
         points_supportint = []
         for i, a in enumerate(self.poly_ext):
-            points_supportext += subdivise(a, self.poly_ext[ (i+1) % NUM_WALLS ] , 3)
-            points_supportint += subdivise(self.poly_int[i], self.poly_int[ (i+1) % NUM_WALLS ] , 3)
-        
+            if i==0:
+                points_supportext += subdivise(a, self.poly_ext[ (i+1) % NUM_WALLS ] , 3, force=True)
+                points_supportint += subdivise(self.poly_int[i], self.poly_int[ (i+1) % NUM_WALLS ] , 3, force=True)
+            else:
+                points_supportext += subdivise(a, self.poly_ext[ (i+1) % NUM_WALLS ] , 3)
+                points_supportint += subdivise(self.poly_int[i], self.poly_int[ (i+1) % NUM_WALLS ] , 3)
+                
         for i,a in enumerate(points_supportext):
             pt1 = a
             pt2 = points_supportint[i]
@@ -126,7 +130,7 @@ class Track:
         pygame.draw.polygon(self.screen, BLACK, self.poly_int)
 
     def get_walls(self):
-        return self.list_walls
+        return self.list_walls.copy()
     
     def get_portals(self):
-        return self.list_portals  
+        return self.list_portals.copy()  

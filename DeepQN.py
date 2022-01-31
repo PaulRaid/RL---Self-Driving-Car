@@ -1,4 +1,3 @@
-from turtle import forward
 import pygame
 import torch
 import torch.nn as nn
@@ -10,15 +9,16 @@ import pickle
 
 
 class DQNSolver(nn.Module):
-    def __init__(self, input_size = NUM_RAYS+1, n_actions = NUM_ACTIONS , dropout = 0.2, hidden_size = 128) -> None:
+    def __init__(self, input_size = NUM_RAYS+1, n_actions = NUM_ACTIONS , dropout = 0.2, hidden_size = 256) -> None:
         super(DQNSolver, self).__init__()
         self.fc = nn.Sequential(
             nn.Linear(input_size, hidden_size),
-            nn.Dropout(dropout),
+            #nn.Dropout(dropout),
             nn.ReLU(),
             nn.Linear(hidden_size, n_actions),
             nn.Softmax()
         )
+        
     
     def forward(self, x):
         return self.fc(x)
@@ -30,7 +30,13 @@ class DQNAgent:
          self.pretrained = pretrained
          self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
          
-         self.dqn = DQNSolver(input_size =state_space, 
+         self.dqn_validation = DQNSolver(input_size =state_space, 
+                              n_actions=action_space,
+                              dropout=dropout,
+                              hidden_size=hidden_size
+                              ).to(self.device)
+         
+         self.dqn_target = DQNSolver(input_size =state_space, 
                               n_actions=action_space,
                               dropout=dropout,
                               hidden_size=hidden_size
@@ -38,8 +44,8 @@ class DQNAgent:
          
          self.lr = lr
          
-         self.optimizer = torch.optim.Adam(self.dqn.parameters(), lr = self.lr)
-         self.loss = nn.MSELoss().to(self.device)
+         self.optimizer = torch.optim.Adam(self.dqn_validation.parameters(), lr = self.lr)
+         self.loss = nn.HingeEmbeddingLoss().to(self.device)
          self.gamma = gamma
          
          self.memory_size = max_mem_size
@@ -63,7 +69,7 @@ class DQNAgent:
             return random.randint(0, self.action_space-1)
         else: 
             state = torch.from_numpy(state).float()
-            action = self.dqn(state.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
+            action = self.dqn_validation(state.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
             return action  
         
     def remember(self, state, action, reward, issue, terminal):
@@ -72,6 +78,15 @@ class DQNAgent:
         self.rem_rewards[self.current_position] = torch.tensor(reward).float()
         self.rem_issues[self.current_position] = torch.from_numpy(issue).float()
         self.rem_terminals[self.current_position] = torch.tensor(terminal).float()
+        
+        if True in torch.isinf(torch.from_numpy(state).float()):
+            print("tensor", torch.from_numpy(state).float())
+            print("np", state)
+            pygame.quit()
+        if True in torch.isinf(torch.from_numpy(issue).float()):
+            print("tensor", torch.from_numpy(issue).float())
+            print("np", issue)
+            pygame.quit()
         
         self.current_position = (self.current_position + 1) % self.memory_size
         self.is_full = min(self.is_full +1, self.memory_size)
@@ -99,35 +114,73 @@ class DQNAgent:
     def driving_lessons(self):
         
         # compute a random batch from the memory before and pass it, then retrop
-        
-        state,action,reward,issue,term = self.compute_batch()
-        
-        self.optimizer.zero_grad()
-        
-        #Q - learning :  target = r + gam * max_a Q(S', a)
-        
-        state = state.to(self.device)
-        action = action.to(self.device)
-        reward = reward.to(self.device)
-        issue = issue.to(self.device)
-        term = term.to(self.device)
-        
-        target = reward + torch.mul(self.gamma * self.dqn(issue).max(1).values.unsqueeze(1) , 1-term)
-        current = self.dqn(state).gather(1, action.long())
-        
-        loss = self.loss(current, target)
-        loss.backward()
-        self.optimizer.step()
-        
-        # Eventually reduce the exploration rate
-        
-        self.exploration_rate *= self.exploration_decay
-        self.exploration_rate = max(self.exploration_rate, self.exploration_min)
-        
-        self.print_infos(action, target, current)
-        
+        if self.current_position > self.batch_size:
+            state,action,reward,issue,term = self.compute_batch()
+            
+            self.optimizer.zero_grad()
+            
+            #Q - learning :  target = r + gam * max_a Q(S', a)
+            
+            state = state.to(self.device)
+            action = action.to(self.device)
+            reward = reward.to(self.device)
+            issue = issue.to(self.device)
+            term = term.to(self.device)
+            
+            pred_next = self.dqn_target(issue)
+            pred_eval = self.dqn_validation(issue).argmax(1)
+            current_pred = self.dqn_validation(state)
+            
+            action_max = pred_eval.long()
+            
+            target = current_pred.clone()
+            
+            batch_index = torch.from_numpy(np.arange(self.batch_size, dtype=np.int32)).long()
+            
+            #target = reward + self.gamma*torch.mul(self.dqn(issue).max(1).values.unsqueeze(1) , 1-term)
+            
+            action = torch.ravel(action).long()
+            reward = reward.ravel()
+            term = term.ravel()
+            #print(term)
+            '''print("action", action)
+            print("batch_index", batch_index)
+            print(target)
+            print(action_max)
+            print(target[batch_index, action].shape)
+            print(reward.shape)
+            print(pred_next[batch_index, action_max].shape)
+            print((1-term).shape)'''
+            
+            target[batch_index, action] = reward + self.gamma*pred_next[batch_index, action_max]*(1-term)
+                        
+            #current = self.dqn(state).gather(1, action.long())
+            
+            '''print("old_state",state)
+            print("issue", issue)
+            print("reward", reward)
+            print("action", action)
+            print("terminal", term )
+            
+            print("target0", self.dqn(issue).max(1).values.unsqueeze(1))
+            print("current", self.dqn(state).gather(1, action.long()))
+            print("target",target)'''
+            
+            loss = self.loss(current_pred, target)
+            loss.backward()
+            self.optimizer.step()
+            
+            # Eventually reduce the exploration rate
+            
+            self.exploration_rate *= self.exploration_decay
+            self.exploration_rate = max(self.exploration_rate, self.exploration_min)
+    
+    
+    
+    
+    
     def save(self, name):
-        torch.save(self.dqn.state_dict(), name+ "/DQN.pt")  
+        torch.save(self.dqn_validation.state_dict(), name+ "/DQN.pt")  
         torch.save(self.rem_states,  name+ "/rem_states.pt")
         torch.save(self.rem_actions, name+ "/rem_actions.pt")
         torch.save(self.rem_issues, name+ "/rem_issues.pt")
@@ -138,3 +191,10 @@ class DQNAgent:
         with open(name+ "/num_in_queue.pkl", "wb") as f:
             pickle.dump(self.is_full, f)
     
+    def update_params(self):
+        self.dqn_target.load_state_dict(self.dqn_validation.state_dict())
+        print(self.dqn_validation.state_dict())
+    
+    
+    def get_exploration(self):
+        return self.exploration_rate

@@ -46,11 +46,13 @@ def intersect_point_fixed(line1, line2):
 
 # -- Code to subdivise a segment (pt1, pt2) in n parts
 
-def subdivise(p1, p2, n_sub):
+def subdivise(p1, p2, n_sub, force = False):
     vec_dir = pygame.math.Vector2(p2.x - p1.x, p2.y - p1.y)
+    if force:
+        n_sub = 2*n_sub
     vec_dir = vec_dir/n_sub
     res = []
-    for i in range(n_sub+1):
+    for i in range(n_sub):
         res.append(p1 + i*vec_dir)
     return res
 
@@ -98,6 +100,12 @@ def clamp_close_number(vec):
     if abs(vecy-rvecy) < 1e-5:
         vecy = rvecy
     return pygame.math.Vector2(vecx, vecy)
+
+def clamp(x):
+    if x < 0:
+        return 0
+    if x > 1:
+        return 1
 
 class Score:
     def __init__(self) -> None:
