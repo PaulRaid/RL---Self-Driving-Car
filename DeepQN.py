@@ -6,17 +6,23 @@ from car import *
 from constants import *
 import random
 import pickle 
+from collections import *
 
 
 class DQNSolver(nn.Module):
     def __init__(self, input_size = NUM_RAYS+1, n_actions = NUM_ACTIONS , dropout = 0.2, hidden_size = 256) -> None:
         super(DQNSolver, self).__init__()
         self.fc = nn.Sequential(
-            nn.Linear(input_size, hidden_size),
-            #nn.Dropout(dropout),
-            nn.ReLU(),
-            nn.Linear(hidden_size, n_actions),
-            nn.Softmax()
+            OrderedDict([
+                ('input' , nn.Linear(input_size, hidden_size)),
+                #nn.Dropout(dropout),
+                ('relu1' , nn.ReLU()),
+                ('hidden' , nn.Linear(hidden_size, hidden_size)),
+                #nn.Dropout(dropout),
+                ('relu2' , nn.ReLU()),
+                ('output' , nn.Linear(hidden_size, n_actions)),
+                ('sigm' , nn.Softmax())]
+            )
         )
         
     
@@ -93,7 +99,7 @@ class DQNAgent:
     
     def compute_batch(self):
         indices = random.choices(range(self.is_full), k = self.batch_size)
-        
+                
         state_batch = self.rem_states[indices]
         action_batch = self.rem_actions[indices]
         reward_batch = self.rem_rewards[indices]
@@ -153,7 +159,7 @@ class DQNAgent:
             print((1-term).shape)'''
             
             target[batch_index, action] = reward + self.gamma*pred_next[batch_index, action_max]*(1-term)
-                        
+            
             #current = self.dqn(state).gather(1, action.long())
             
             '''print("old_state",state)
@@ -193,7 +199,6 @@ class DQNAgent:
     
     def update_params(self):
         self.dqn_target.load_state_dict(self.dqn_validation.state_dict())
-        print(self.dqn_validation.state_dict())
     
     
     def get_exploration(self):

@@ -61,10 +61,10 @@ class Track:
 
         # External
         wall00 = Wall(offset_x + 1 * vx, offset_y, offset_x + 6 * vx, offset_y)
-        wall10 = Wall(offset_x + 6 * vx, offset_y, offset_x + 6.5 * vx,  offset_y + 1 * vy)
-        wall20 = Wall(offset_x + 6.5 * vx,  offset_y + 1 * vy, offset_x + 8.5 * vx, offset_y + 1 * vy)
-        wall30 = Wall(offset_x + 8.5 * vx, offset_y + 1 * vy, offset_x + 10 * vx, offset_y + 4 * vy )
-        wall40 = Wall(offset_x + 8.5 * vx, offset_y + 1 * vy, offset_x + 10 * vx, offset_y + 4 * vy )
+        wall10 = Wall(offset_x + 6 * vx, offset_y, offset_x + 8 * vx,  offset_y )
+        wall20 = Wall(offset_x + 8 * vx,  offset_y , offset_x + 9 * vx, offset_y + 1 * vy)
+        wall30 = Wall(offset_x + 9 * vx, offset_y + 1 * vy, offset_x + 10 * vx, offset_y + 2 * vy )
+        wall40 = Wall(offset_x + 10 * vx, offset_y + 2 * vy, offset_x + 10 * vx, offset_y + 4 * vy )
         wall50 = Wall(offset_x + 10 * vx, offset_y + 4 * vy, offset_x + 10 * vx, offset_y + 7 * vy)
         wall60 = Wall(offset_x + 10 * vx, offset_y + 7 * vy, offset_x + 9 * vx, offset_y + 9 * vy)
         wall70 = Wall(offset_x + 9 * vx, offset_y + 9 * vy, offset_x + 7 * vx, offset_y + 10 * vy)
@@ -85,6 +85,22 @@ class Track:
         vy = (1-2*off) * height / 10
 
         wall01 = Wall(offset_x + 1 * vx, offset_y, offset_x + 6 * vx, offset_y)
+        wall11 = Wall(offset_x + 6 * vx, offset_y, offset_x + 8 * vx,  offset_y )
+        wall21 = Wall(offset_x + 8 * vx,  offset_y , offset_x + 9 * vx, offset_y + 1 * vy)
+        wall31 = Wall(offset_x + 9 * vx, offset_y + 1 * vy, offset_x + 10 * vx, offset_y + 2 * vy )
+        wall41 = Wall(offset_x + 10 * vx, offset_y + 2 * vy, offset_x + 10 * vx, offset_y + 4 * vy )
+        wall51 = Wall(offset_x + 10 * vx, offset_y + 4 * vy, offset_x + 10 * vx, offset_y + 7 * vy)
+        wall61 = Wall(offset_x + 10 * vx, offset_y + 7 * vy, offset_x + 9 * vx, offset_y + 9 * vy)
+        wall71 = Wall(offset_x + 9 * vx, offset_y + 9 * vy, offset_x + 7 * vx, offset_y + 10 * vy)
+        wall81 = Wall(offset_x + 7 * vx, offset_y + 10 * vy, offset_x + 3 * vx, offset_y + 10 * vy)
+        wall91 = Wall(offset_x + 3 * vx, offset_y + 10 * vy, offset_x + 1 * vx, offset_y + 9 * vy)
+        wall101 = Wall(offset_x + 1 * vx, offset_y + 9 * vy, offset_x, offset_y + 7 * vy)
+        wall111 = Wall(offset_x, offset_y + 7 * vy, offset_x, offset_y + 1 * vy)
+        wall121 = Wall(offset_x, offset_y + 1 * vy, offset_x + 0.25 * vx, offset_y + 0.25 * vy)
+        wall131 = Wall(offset_x + 0.25 * vx, offset_y + 0.25 * vy, offset_x + 1 * vx, offset_y)
+
+        '''  # Old Track
+        wall01 = Wall(offset_x + 1 * vx, offset_y, offset_x + 6 * vx, offset_y)
         wall11 = Wall(offset_x + 6 * vx, offset_y, offset_x + 6.5 * vx,  offset_y + 1 * vy)
         wall21 = Wall(offset_x + 6.5 * vx,  offset_y + 1 * vy, offset_x + 8.5 * vx, offset_y + 1 * vy)
         wall31 = Wall(offset_x + 8.5 * vx, offset_y + 1 * vy, offset_x + 10 * vx, offset_y + 4 * vy )
@@ -98,6 +114,7 @@ class Track:
         wall111 = Wall(offset_x, offset_y + 7 * vy, offset_x, offset_y + 1 * vy)
         wall121 = Wall(offset_x, offset_y + 1 * vy, offset_x + 0.25 * vx, offset_y + 0.25 * vy)
         wall131 = Wall(offset_x + 0.25 * vx, offset_y + 0.25 * vy, offset_x + 1 * vx, offset_y)
+        '''
 
         #wall00 = Wall(0, 50, 10,0)
         for i in range(NUM_WALLS):

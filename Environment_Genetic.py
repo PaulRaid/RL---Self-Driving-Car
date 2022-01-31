@@ -4,7 +4,8 @@ from utils_track import *
 from car import *
 from constants import *
 from geometry import *
-from DeepQN import DQNAgent
+from DeepQN import *
+from DeepEvo import * 
 
 
 successes, failures = pygame.init()
@@ -14,79 +15,66 @@ print("{0} successes and {1} failures".format(successes, failures))
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
-
 track = Track(screen)
-driver = Car(screen, track)
 
-agent = DQNAgent(state_space = NUM_RAYS+1, 
-                 action_space = NUM_ACTIONS, 
-                 dropout = 0,  
-                 hidden_size= 30,
-                 pretrained = False, 
-                 lr = 0.001, 
-                 gamma=0.99, 
-                 max_mem_size = 30000, 
-                 exploration_rate = 1, 
-                 exploration_decay = .9995, 
-                 exploration_min = 0.1,  
-                 batch_size = 512)
+population = Evolution(screen=screen, 
+                       track=track, 
+                       nb_indiv = NB_INDIV_GEN)
 
 # Animation Loop
 game_reward = []
 current_reward = 0
 counter = 0
-countersuper = 0
+counter_pop = -1
 
 while True:
     clock.tick()
     screen.fill(BLACK)
     
-    driver.replace(True)
+    counter_pop += 1
+    print(" > Launching population " + str(counter_pop)) 
+    
+    population.generate_next_pop()
+    
     counter = 0
-    state, terminal = driver.get_observations()
+    state, terminal = population.get_observations()
     current_reward = 0
-    while not terminal:
+    while not (sum(terminal) == len(terminal)):
+        #print(terminal)
         
         for event in pygame.event.get():                # handle keybord events
             if event.type == pygame.QUIT:
-                agent.save("NN")
-                quit()  
-            elif event.type == pygame.KEYDOWN:
-                driver.modify(event)
+                quit()
     
-        recom_action = agent.act(state)
+        recom_action = population.predict_action(state)
+        
+        old_state, issue, reward, action_chosen, terminal = population.act(recom_action)
     
-        old_state, issue, reward, action_chosen, terminal = driver.act(recom_action)
-    
-        if reward == 0:  # To kill cars that haven't been rewarded in last 100 games
+        '''if reward == 0:  # To kill cars that haven't been rewarded in last 100 games
             counter += 1
             if counter > 100:
                 terminal = True
         else:
-            counter = 0
+            counter = 0'''
         
-        countersuper +=1
         
-        '''print("\nnumber", countersuper)
-        print("old_state",old_state)
+        '''print("\nold_state",old_state)
         print("issue", issue)
         print("reward", reward)
         print("action", action_chosen)
         print("terminal", terminal )'''
         
-        agent.remember(state, action_chosen, reward, issue, terminal)
-        
-        agent.driving_lessons()
         
         track.draw_track()
-        driver.draw_car(screen)
+        population.draw(screen)
         #driver.print_car()
         pygame.display.update()
     
-        current_reward += reward
+        #current_reward += reward
     
     # The car has crashed  
    # print("kill")
+    '''
     game_reward.append(current_reward)
     ind = len(game_reward)
     if ind % REPLACE_TARGET == 0 and ind > REPLACE_TARGET:
@@ -94,4 +82,5 @@ while True:
     if ind % 10 ==0:                    # print current learning infos every 10 games
         avg = np.mean(game_reward[max(ind-100, 0):ind])
         print("> Game Numer : " + str(ind) + " | Last Game Reward = " + str(current_reward) + " | Average R on 100 last games : " + str(avg) + " | Exploration rate : " + str(agent.get_exploration()))
+    '''
 

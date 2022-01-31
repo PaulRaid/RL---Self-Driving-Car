@@ -224,7 +224,7 @@ class Car():
         self.image = new_image.copy()
     
     # -- method to check if the position is authorised and replace it # Returns True if it has hurted a wall (for Q learning training)
-    def replace(self, reset = False):                              
+    def replace(self, reset = False):                       
         if not self.is_position_valid() or reset: 
             
             # -- Reset Object
@@ -405,3 +405,71 @@ class Car():
         
         
         return res
+
+
+class Car_evo(Car):
+    def __init__(self, screen, track):
+        super().__init__(screen, track)
+    
+    #@Override
+    def act(self, action_chosen):
+        old_state, t = self.get_observations()
+        if action_chosen == 0:     # action 0 : doing nothing
+            pass
+        if action_chosen == 1:  # action 1 : Turn left
+            self.turn()
+            self.rot()
+            pass
+        if action_chosen == 2:  # action 2 : Turn right
+            self.turn(-1)
+            self.rot()
+            pass
+        if action_chosen == 3:  # action 3 : accel
+            self.accelerate()
+            pass
+        if action_chosen == 4:  # action 4 : decelerate
+            self.accelerate(-1)
+            pass
+        if action_chosen == 5:  # action 5 : Acc + Turn left 
+            self.accelerate()
+            self.turn()
+            self.rot()
+            pass
+        if action_chosen == 6:  # action 6 : Acc + Turn right 
+            self.accelerate()
+            self.turn(-1)
+            self.rot()
+            pass
+        if action_chosen == 7:  # action 7 : Dec + Turn left 
+            self.accelerate(-1)
+            self.turn()
+            self.rot()
+            pass
+        if action_chosen == 8:  # action 6 : Dec + Turn right 
+            self.accelerate(-1)
+            self.turn(-1)
+            self.rot()
+            pass
+        terminal = self.update()
+        self.last_actions.append(action_chosen)
+        if terminal:
+            new_state, t = self.get_observations()
+        else: 
+            new_state, t = self.get_observations()
+        reward = self.get_reward()
+        return old_state, new_state, reward, action_chosen, terminal
+    
+    #@Override
+    def replace(self, reset=False):
+        if not self.is_position_valid() or reset: 
+            # -- Score for IA
+            self.score += REWARD_WALL
+            self.last_reward = REWARD_WALL
+            return 1
+        
+        if not self.set_portals():  # updates the portals in place: if nothing has changed --> give life reward
+            
+            # -- Score for IA
+            self.score += REWARD_BASE
+            self.last_reward = REWARD_BASE
+        return 0
