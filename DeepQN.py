@@ -17,15 +17,14 @@ class DQNSolver(nn.Module):
                 ('input' , nn.Linear(input_size, hidden_size)),
                 #nn.Dropout(dropout),
                 ('relu1' , nn.ReLU()),
-                ('hidden' , nn.Linear(hidden_size, hidden_size)),
+                #('hidden' , nn.Linear(hidden_size, hidden_size)),
                 #nn.Dropout(dropout),
-                ('relu2' , nn.ReLU()),
+                #('relu2' , nn.ReLU()),
                 ('output' , nn.Linear(hidden_size, n_actions)),
                 ('sigm' , nn.Softmax())]
             )
         )
         
-    
     def forward(self, x):
         return self.fc(x)
 
@@ -98,8 +97,11 @@ class DQNAgent:
         self.is_full = min(self.is_full +1, self.memory_size)
     
     def compute_batch(self):
-        indices = random.choices(range(self.is_full), k = self.batch_size)
-                
+        #indices = random.choices(range(self.is_full), k = self.batch_size, weights= np.random.exponential(2, self.is_full) )
+        #indices = [self.is_full -1 - a for a in (np.random.exponential(2, self.is_full))]
+        exp = np.random.exponential(self.batch_size, self.batch_size)
+        indices = [(self.is_full - int(a)) % self.memory_size for a in exp]
+        
         state_batch = self.rem_states[indices]
         action_batch = self.rem_actions[indices]
         reward_batch = self.rem_rewards[indices]
@@ -181,10 +183,6 @@ class DQNAgent:
             self.exploration_rate *= self.exploration_decay
             self.exploration_rate = max(self.exploration_rate, self.exploration_min)
     
-    
-    
-    
-    
     def save(self, name):
         torch.save(self.dqn_validation.state_dict(), name+ "/DQN.pt")  
         torch.save(self.rem_states,  name+ "/rem_states.pt")
@@ -200,6 +198,6 @@ class DQNAgent:
     def update_params(self):
         self.dqn_target.load_state_dict(self.dqn_validation.state_dict())
     
-    
+
     def get_exploration(self):
         return self.exploration_rate

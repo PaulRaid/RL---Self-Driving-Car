@@ -37,8 +37,8 @@ class IndividualBrain(nn.Module):
         
     def init_weights(self, m):
          if isinstance(m, nn.Linear):
-            torch.nn.init.uniform_(m.weight)
-            torch.nn.init.uniform_(m.bias)
+            torch.nn.init.uniform_(m.weight, a = -3, b =3)
+            torch.nn.init.uniform_(m.bias,a = -3, b =3)
         
     def forward(self, x):
         return self.nn(x)
@@ -71,18 +71,17 @@ class IndividualBrain(nn.Module):
 
                     # Mutate
                         if random.randint(0, mutation_rate) == 1:
-                            tens_[i][j] += random.random() - 1/2
+                            tens_[i][j] += 4*random.random() - 2
         
                 child_dic[level + "." + type_] = tens_.clone()
-                    
-            
+                                
             if type_ == "bias":
                 tens_ = child_dic[level + "." + type_].clone()
                 for i,elem in enumerate(tens_):
                     p = random.random()
                     tens_[i] = p * mother_dic[level + "." + type_][i] + (1 - p) * father_dic[level + "." + type_][i]
                     if random.randint(0, mutation_rate) == 1:
-                        tens_[i] += random.random() - 1/2
+                        tens_[i] += 4*random.random() - 2
                 child_dic[level + "." + type_] = tens_.clone()
         
         for old_key in child_dic.copy().keys():
@@ -97,7 +96,6 @@ class IndividualBrain(nn.Module):
     def get_dict(self):
         return self.nn.state_dict().copy()
 
-
     
 class Evolution():
     def __init__(self,screen, track, nb_indiv = 250) -> None:
@@ -106,7 +104,7 @@ class Evolution():
         self.scores = np.zeros(nb_indiv)
         self.dead = np.zeros(nb_indiv)
         self.decision = np.zeros(nb_indiv)  # To check if an agent has scored moved in the last 150 ticks 
-        self.last_dec = np.zeros(nb_indiv)
+        self.last_rew = np.zeros(nb_indiv)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
     def act(self):
@@ -136,20 +134,31 @@ class Evolution():
         argm = np.argmax(self.scores)
         valm = self.scores[argm]
         print("     > Best score for this gen is " + str(valm))
-        #best_people = [elem for i,elem in enumerate(self.list_indiv) if self.scores(i) > 0.9 * valm]
-        best_people = [elem for (i,elem) in enumerate(self.list_indiv) ]#if self.scores[i] >= 0.9 * valm]
+        best_people =[]
+        coef = 0.9
+        while len(best_people)<2:
+            best_people = [elem for (i,elem) in enumerate(self.list_indiv) if self.scores[i] >= coef * valm]
+            coef *=0.9
         self.list_indiv = self.cross(best_people)
         self.scores = np.zeros(self.nb_indiv)
+        
         self.dead = np.zeros(self.nb_indiv)
         self.decision = np.zeros(self.nb_indiv)
+        self.last_rew = np.zeros(self.nb_indiv)
          
     def get_observations(self):
         state_ = []
         terminal_ = []
-        for elem in self.list_indiv:
-            state, terminal = elem.car.get_observations()
-            state_.append(state)
-            terminal_.append(terminal)
+        for i,elem in enumerate(self.list_indiv):
+            if self.dead[i] == 0:
+                state, terminal = elem.car.get_observations()
+                state_.append(state)
+                terminal_.append(terminal)
+            else:
+                state, terminal = None, 1
+                state_.append(state)
+                terminal_.append(terminal)
+                
         return state_.copy(), terminal_.copy()
     
     def predict_action(self, state):
@@ -159,11 +168,6 @@ class Evolution():
                 state_ = torch.from_numpy(state[i]).float()
                 action_ = elem(state_.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
                 recom.append(action_)
-                if self.last_dec[i]==0 and action_ ==0:
-                    self.decision[i] +=1
-                else:
-                    self.last_dec[i]= action_
-                    self.decision[i] = 0
             else:
                 recom.append(None)
         return recom
@@ -174,8 +178,17 @@ class Evolution():
         reward_ = []
         action_chosen_ = []
         terminal_ = []
+        #print("dec",self.decision)
         for i,elem in enumerate(self.list_indiv):
-            if self.dead[i] == 0:
+            
+            if self.decision[i] >= 150: 
+                state_.append(None)
+                issue_.append(None)
+                reward_.append(0)
+                action_chosen_.append(None)
+                terminal_.append(1)
+            
+            elif self.dead[i] == 0:
                 state, issue, reward, action_chosen, terminal = elem.car.act(actions[i])
                 state_.append(state)
                 issue_.append(issue)
@@ -184,12 +197,12 @@ class Evolution():
                 terminal_.append(terminal)
                 self.scores[i] += reward
                 self.dead[i] = terminal
-            elif self.decision[i]==150: 
-                state_.append(None)
-                issue_.append(None)
-                reward_.append(0)
-                action_chosen_.append(None)
-                terminal_.append(1)
+                self.last_rew[i] = reward
+                if reward == 0:
+                    self.decision[i] +=1
+                else:
+                    self.decision[i] =0
+                
             else:
                 state_.append(None)
                 issue_.append(None)
@@ -199,8 +212,8 @@ class Evolution():
         return state_, issue_, reward_, action_chosen_, terminal_
 
     def draw(self, screen):
-        
-        for i,elem in enumerate(self.list_indiv):
+        best_people = [(i,elem) for (i,elem) in enumerate(self.list_indiv)]# if self.scores[i] >= 0.9 * np.max(self.scores)]
+        for j, (i,elem) in enumerate(best_people):
             if self.dead[i] == 0:
                 elem.car.draw_car(screen)
 

@@ -7,12 +7,19 @@ from constants import *
 import random
 import pickle 
 from DeepEvo import *
+import numpy as np
+import matplotlib.pyplot as plt
+  
+# Using exponential() method
+gfg = np.random.exponential(500, 10000)
+gfg1 = np.random.exponential(gfg, 10000)
+  
+count, bins, ignored = plt.hist(gfg, 14, density = True)
+for a in gfg:
+    if a ==0:
+        print(a)
 
-
-'''dict = torch.load("NN/DQN.pt")
-
-key_tab = dict.keys()
-key_tab = [(key.split(".")[1], key.split(".")[2] ) for key in key_tab]
-print(key_tab)'''
+print(np.max(gfg))
+plt.show()
 
 

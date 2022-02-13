@@ -21,7 +21,7 @@ driver = Car(screen, track)
 agent = DQNAgent(state_space = NUM_RAYS+1, 
                  action_space = NUM_ACTIONS, 
                  dropout = 0,  
-                 hidden_size= 30,
+                 hidden_size= 256,
                  pretrained = False, 
                  lr = 0.001, 
                  gamma=0.99, 
@@ -46,7 +46,9 @@ while True:
     state, terminal = driver.get_observations()
     current_reward = 0
     while not terminal:
+        countersuper +=1
         
+        #if countersuper % 5 ==0:
         for event in pygame.event.get():                # handle keybord events
             if event.type == pygame.QUIT:
                 agent.save("NN")
@@ -60,7 +62,7 @@ while True:
     
         if reward == 0:  # To kill cars that haven't been rewarded in last 100 games
             counter += 1
-            if counter > 100:
+            if counter > 1000:
                 terminal = True
         else:
             counter = 0
