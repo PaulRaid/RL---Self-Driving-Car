@@ -4,7 +4,6 @@ from game_utils.utils_track import *
 from game_utils.car import *
 from game_utils.constants import *
 from game_utils.geometry import *
-from qlearning.DeepQN import *
 from evolution.DeepEvo import *
 
 successes, failures = pygame.init()
@@ -38,17 +37,18 @@ while True:
 	counter = 0
 	state, terminal = population.get_observations()
 	current_reward = 0
-
+	issue = state.copy()
+ 
 	while not (sum(terminal) == len(terminal)):
 
 		for event in pygame.event.get():  # handle keybord events
 			if event.type == pygame.QUIT:
 				quit()
 
-		recom_action = population.predict_action(state)
+		recom_action = population.predict_action(issue)
 
 		old_state, issue, reward, action_chosen, terminal = population.act(recom_action)
-
+  
 		'''if reward == 0:  # To kill cars that haven't been rewarded in last 100 games
 			counter += 1
 			if counter > 100:

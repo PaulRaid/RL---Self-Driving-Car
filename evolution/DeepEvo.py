@@ -1,4 +1,5 @@
 import os, sys
+
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
@@ -18,7 +19,7 @@ from collections import *
 
 
 class IndividualBrain(nn.Module):
-    def __init__(self, screen, track, input_size = NUM_RAYS+1, n_actions = NUM_ACTIONS , hidden_s1 = 10, hidden_s2 = 10) -> None:
+    def __init__(self, screen, track, input_size = NUM_RAYS_GENETIC+1, n_actions = NUM_ACTIONS , hidden_s1 = 5, hidden_s2 = 5) -> None:
         super().__init__()
         self.car = Car_evo(screen, track)
         self.input_size =input_size
@@ -32,8 +33,8 @@ class IndividualBrain(nn.Module):
              OrderedDict([
                 ('input' , nn.Linear(input_size, hidden_s1)),
                 ('relu1' , nn.ReLU()),
-                ('hidden' , nn.Linear(hidden_s1, hidden_s2)),
-                ('relu2' , nn.ReLU()),
+                #('hidden' , nn.Linear(hidden_s1, hidden_s2)),
+                #('relu2' , nn.ReLU()),
                 ('output' , nn.Linear(hidden_s2, n_actions)),
                 ('sigm' , nn.Softmax())]
             )
@@ -42,11 +43,13 @@ class IndividualBrain(nn.Module):
         
     def init_weights(self, m):
          if isinstance(m, nn.Linear):
-            torch.nn.init.uniform_(m.weight, a = -3, b =3)
-            torch.nn.init.uniform_(m.bias,a = -3, b =3)
+            torch.nn.init.normal_(m.weight, mean = 0, std =1.0)
+            torch.nn.init.normal_(m.bias, mean = 0, std =1.0)
+            
         
     def forward(self, x):
-        return self.nn(x)
+        res = self.nn(x)
+        return res
     
     def cross(self, partner):
         child = IndividualBrain(self.screen, self.track, self.input_size, self.n_actions, self.hidden_s1, self.hidden_s2)
@@ -62,6 +65,8 @@ class IndividualBrain(nn.Module):
             mutation_rate = 10
         else:
             mutation_rate = 100000000 # Infinity -> no mutation
+        
+        mutation_rate = 3
         
         for i, (level, type_) in enumerate(key_tab):
             if type_ == "weight":
@@ -138,13 +143,19 @@ class Evolution():
     def generate_next_pop(self):
         argm = np.argmax(self.scores)
         valm = self.scores[argm]
+        print("     > Scores for this gen are " + str(self.scores))
         print("     > Best score for this gen is " + str(valm))
+        print("         > Crossing for new population ")
         best_people =[]
         coef = 0.9
-        while len(best_people)<2:
-            best_people = [elem for (i,elem) in enumerate(self.list_indiv) if self.scores[i] >= coef * valm]
-            coef *=0.9
+        
+        best_people = [elem for (i,elem) in enumerate(self.list_indiv) if self.scores[i] >= coef * valm]
+        
+        if len(best_people)<2:
+            best_people.append(self.list_indiv[np.random.randint(self.nb_indiv)])
+        
         self.list_indiv = self.cross(best_people)
+        print("         > Crossing done ")
         self.scores = np.zeros(self.nb_indiv)
         
         self.dead = np.zeros(self.nb_indiv)
@@ -167,15 +178,18 @@ class Evolution():
         return state_.copy(), terminal_.copy()
     
     def predict_action(self, state):
+        print(state)
         recom = []
         for i,elem in enumerate(self.list_indiv):
-            if self.dead[i] == 0:
+            if self.dead[i] == 0:                    
                 state_ = torch.from_numpy(state[i]).float()
                 action_ = elem(state_.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
+                print(action_)
                 recom.append(action_)
-            else:
+            else:                    
                 recom.append(None)
-        return recom
+            return recom
+        
     
     def act(self, actions):
         state_ = []
@@ -185,7 +199,6 @@ class Evolution():
         terminal_ = []
         #print("dec",self.decision)
         for i,elem in enumerate(self.list_indiv):
-            
             if self.decision[i] >= 150: 
                 state_.append(None)
                 issue_.append(None)
@@ -219,7 +232,7 @@ class Evolution():
     def draw(self, screen):
         best_people = [(i,elem) for (i,elem) in enumerate(self.list_indiv)]# if self.scores[i] >= 0.9 * np.max(self.scores)]
         for j, (i,elem) in enumerate(best_people):
-            if self.dead[i] == 0:
+            #if self.dead[i] == 0:
                 elem.car.draw_car(screen)
 
         

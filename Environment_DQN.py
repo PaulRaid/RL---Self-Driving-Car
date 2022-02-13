@@ -5,6 +5,7 @@ from game_utils.car import *
 from game_utils.constants import *
 from game_utils.geometry import *
 from qlearning.DeepQN import DQNAgent
+import time
 
 
 successes, failures = pygame.init()
@@ -13,7 +14,6 @@ print("{0} successes and {1} failures".format(successes, failures))
 # Game intialisation
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-
 
 track = Track(screen)
 driver = Car(screen, track)
@@ -45,7 +45,9 @@ while True:
     counter = 0
     state, terminal = driver.get_observations()
     current_reward = 0
+    issue = state.copy()
     while not terminal:
+        t1 = time.time()
         countersuper +=1
         
         #if countersuper % 5 ==0:
@@ -56,14 +58,19 @@ while True:
             elif event.type == pygame.KEYDOWN:
                 driver.modify(event)
     
-        recom_action = agent.act(state)
+        recom_action = agent.act(issue)
     
         old_state, issue, reward, action_chosen, terminal = driver.act(recom_action)
+        
+        
+        '''if terminal or current_reward==-1:
+            print(reward)'''
     
         if reward == 0:  # To kill cars that haven't been rewarded in last 100 games
             counter += 1
             if counter > 1000:
                 terminal = True
+                reward = REWARD_WALL
         else:
             counter = 0
         
@@ -76,7 +83,8 @@ while True:
         print("action", action_chosen)
         print("terminal", terminal )'''
         
-        agent.remember(state, action_chosen, reward, issue, terminal)
+        agent.remember(old_state, action_chosen, reward, issue, terminal)
+        
         
         agent.driving_lessons()
         
@@ -84,10 +92,12 @@ while True:
         driver.draw_car(screen)
         #driver.print_car()
         pygame.display.update()
-    
+
+
         current_reward += reward
+        t2 = time.time()
     
-    # The car has crashed  
+    # >>> The car has crashed  
    # print("kill")
     game_reward.append(current_reward)
     ind = len(game_reward)
@@ -95,5 +105,5 @@ while True:
             agent.update_params()
     if ind % 10 ==0:                    # print current learning infos every 10 games
         avg = np.mean(game_reward[max(ind-100, 0):ind])
-        print("> Game Numer : " + str(ind) + " | Last Game Reward = " + str(current_reward) + " | Average R on 100 last games : " + str(avg) + " | Exploration rate : " + str(agent.get_exploration()))
+        print("> Game Numer : " + str(ind) + " | Last Game Reward = " + str(current_reward) + " | Average R on 100 last games : " + str(avg) + " | Exploration rate : " + str(agent.get_exploration()) + " | Current FPS : " + str(round(1/(t2-t1))))
 

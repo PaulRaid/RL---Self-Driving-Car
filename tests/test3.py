@@ -1,25 +1,29 @@
-import pygame
+class A:
+    def __init__(self) -> None:
+        self.att = 0
+        self.batt = 1
+        self.li = []
+        
+    def fun(self):
+        self.other(2)
+    
+    def other(self, num):
+        for i in range(num):
+            self.li.append(i)
+            
+class B(A):
+    def __init__(self) -> None:
+        super().__init__()
+        
+    # @Override
+    def other(self, num):
+        for i in range(num):
+            self.li.append(-i)
+
 import torch
-import torch.nn as nn
-import numpy as np
-from car import * 
-from constants import *
-import random
-import pickle 
-from evolution.DeepEvo import *
-import numpy as np
-import matplotlib.pyplot as plt
-  
-# Using exponential() method
-gfg = np.random.exponential(500, 10000)
-gfg1 = np.random.exponential(gfg, 10000)
-  
-count, bins, ignored = plt.hist(gfg, 14, density = True)
-for a in gfg:
-    if a ==0:
-        print(a)
 
-print(np.max(gfg))
-plt.show()
+w= torch.zeros(3,2)
+print(torch.nn.init.uniform_(w))
 
-
+w= torch.zeros(3,2)
+print(torch.nn.init.uniform_(w))

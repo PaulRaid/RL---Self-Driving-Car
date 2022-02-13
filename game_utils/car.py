@@ -149,10 +149,7 @@ class Car:
 			pass
 		terminal = self.update()
 		self.last_actions.append(action_chosen)
-		if terminal:
-			new_state, t = self.get_observations()
-		else:
-			new_state, t = self.get_observations()
+		new_state, t = self.get_observations()
 		reward = self.get_reward()
 		return old_state, new_state, reward, action_chosen, terminal
 
@@ -220,7 +217,6 @@ class Car:
 	def replace(self, reset=False):
 		if not self.is_position_valid() or reset:
 			# -- Reset Object
-
 			new_image = pygame.transform.rotate(self.image_base, 0)
 			self.rect = new_image.get_rect()
 			self.rect.x = INIT_POS.x
@@ -246,14 +242,14 @@ class Car:
 			self.portals[self.num_portal].set_inactive()
 			self.portals[FIRST_PORTAL].set_active()
 			self.num_portal = FIRST_PORTAL  # the number of the current active portal
-
-			# -- Score for IA
-			self.score += REWARD_WALL
-			self.last_reward = REWARD_WALL
+			
+			if not reset:
+				# -- Score for IA
+				self.score += REWARD_WALL
+				self.last_reward = REWARD_WALL
 			return 1
 
 		if not self.set_portals():  # updates the portals in place: if nothing has changed --> give life reward
-
 			# -- Score for IA
 			self.score += REWARD_BASE
 			self.last_reward = REWARD_BASE
@@ -328,11 +324,10 @@ class Car:
 		for i, viz in enumerate(self.rays):
 			point, dist = viz.track_intersection(self.track.get_walls())
 			self.viz_points[i] = point
-			self.current_observations[i] = (
-					                               LARG_PISTE - dist) / LARG_PISTE  # -> to normalise the current observation between 0, 1
+			self.current_observations[i] = (LARG_PISTE - dist) / LARG_PISTE  # -> to normalise the current observation between 0, 1
 			if self.current_observations[i] == -np.inf:
 				self.current_observations[i] = 1
-		self.current_observations[NUM_RAYS] = 0.5 + self.velvalue / (2 * VELMAX)
+		self.current_observations[-1] = 0.5 + self.velvalue / (2 * VELMAX)
 
 	# -- To draw the car, the rays, and the portals
 	def draw_car(self, screen):
@@ -363,9 +358,9 @@ class Car:
 
 	# -- prints 4 coords of the car
 	def print_car(self):
-		print("Reward", self.get_reward())
+		print("\nLast Reward", self.get_reward())
+		print("score", self.score)
 		print("Observation", self.get_observations())
-		print(" ")
 
 	# -- To set up the rays leaving the car
 	def set_rays(self):
@@ -411,6 +406,8 @@ class Car:
 class Car_evo(Car):
 	def __init__(self, screen, track):
 		super().__init__(screen, track)
+		self.rays = self.set_rays()
+		self.current_observations = np.zeros(NUM_RAYS_GENETIC + 1 )
 
 	# @Override
 	def act(self, action_chosen):
@@ -469,12 +466,31 @@ class Car_evo(Car):
 			return 1
 
 		if not self.set_portals():  # updates the portals in place: if nothing has changed --> give life reward
-
 			# -- Score for IA
 			self.score += REWARD_BASE
 			self.last_reward = REWARD_BASE
 		return 0
 
+	# @Override --> New version
+	def set_rays(self):
+		u = self.direction_vector.normalize()
+		v = pygame.math.Vector2(u.y, -u.x)  # Anticlock wise
+		s = SIZE
+		u = s * u
+		v = s * v / 2
+
+		res = []
+
+		res.append(Vision(self.rect.centerx + u.x, self.rect.centery + u.y, self.direction_vector))  # front
+
+		res.append(Vision(self.rect.centerx + u.x + v.x, self.rect.centery + u.y + v.y,
+		                  self.direction_vector.rotate(-15)))  # front up 30
+		
+		res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y,
+		                  self.direction_vector.rotate(15)))  # front down  30
+		
+
+		return res
 
 class CarNN(Car):
 	def __init__(self, screen, track):

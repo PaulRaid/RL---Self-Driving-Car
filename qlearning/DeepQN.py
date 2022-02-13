@@ -26,7 +26,8 @@ class DQNSolver(nn.Module):
                 #nn.Dropout(dropout),
                 #('relu2' , nn.ReLU()),
                 ('output' , nn.Linear(hidden_size, n_actions)),
-                ('sigm' , nn.Softmax())]
+                ('sigm' , nn.Softmax())
+                ]
             )
         )
         
@@ -80,7 +81,7 @@ class DQNAgent:
         else: 
             state = torch.from_numpy(state).float()
             action = self.dqn_validation(state.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
-            return action  
+            return action.item()  
         
     def remember(self, state, action, reward, issue, terminal):
         self.rem_states[self.current_position] =  torch.from_numpy(state).float()
