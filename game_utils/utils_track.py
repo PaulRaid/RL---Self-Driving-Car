@@ -1,8 +1,8 @@
 from cgitb import grey
 import pygame
 from pygame.locals import *
-from constants import *
-from geometry import *
+from game_utils.constants import *
+from game_utils.geometry import *
 
 
 class Wall:

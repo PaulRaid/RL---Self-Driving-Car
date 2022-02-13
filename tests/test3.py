@@ -6,7 +6,7 @@ from car import *
 from constants import *
 import random
 import pickle 
-from DeepEvo import *
+from evolution.DeepEvo import *
 import numpy as np
 import matplotlib.pyplot as plt
   

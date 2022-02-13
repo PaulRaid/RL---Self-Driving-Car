@@ -1,10 +1,10 @@
 import pygame
 from pygame.locals import *
-from utils_track import *
-from car import *
-from constants import *
-from geometry import *
-from DeepQN import DQNAgent
+from ..game_utils.utils_track import *
+from ..game_utils.car import *
+from ..game_utils.constants import *
+from ..game_utils.geometry import *
+from ..qlearning.DeepQN import DQNAgent
 
 
 '''successes, failures = pygame.init()

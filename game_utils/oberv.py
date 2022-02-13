@@ -1,7 +1,7 @@
 import pygame
 from torch import argmin
-from constants import *
-from geometry import *
+from game_utils.constants import *
+from game_utils.geometry import *
 import numpy as np
 
 # The Rays going in all the directions from the car

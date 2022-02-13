@@ -1,8 +1,8 @@
 import pygame
-from constants import * 
+from game_utils.constants import * 
 import pygame.math
-from geometry import *
-from oberv import *
+from game_utils.geometry import *
+from game_utils.oberv import *
 
 
 class Car():

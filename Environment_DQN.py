@@ -1,10 +1,10 @@
 import pygame
 from pygame.locals import *
-from utils_track import *
-from car import *
-from constants import *
-from geometry import *
-from DeepQN import DQNAgent
+from game_utils.utils_track import *
+from game_utils.car import *
+from game_utils.constants import *
+from game_utils.geometry import *
+from qlearning.DeepQN import DQNAgent
 
 
 successes, failures = pygame.init()
@@ -51,7 +51,7 @@ while True:
         #if countersuper % 5 ==0:
         for event in pygame.event.get():                # handle keybord events
             if event.type == pygame.QUIT:
-                agent.save("NN")
+                agent.save("results/NN")
                 quit()  
             elif event.type == pygame.KEYDOWN:
                 driver.modify(event)

@@ -1,6 +1,6 @@
 import pygame.math
 
-from oberv import *
+from game_utils.oberv import *
 
 
 class Car:

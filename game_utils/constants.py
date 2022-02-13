@@ -1,4 +1,4 @@
-from geometry import *
+from game_utils.geometry import *
 # colors constants
 
 WHITE = (255, 255, 255)

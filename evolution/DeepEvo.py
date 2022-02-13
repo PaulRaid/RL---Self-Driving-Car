@@ -1,10 +1,15 @@
+import os, sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 from matplotlib.pyplot import get
 import pygame
 import torch
 import torch.nn as nn
 import numpy as np
-from car import * 
-from constants import *
+from game_utils.car import * 
+from game_utils.constants import *
 import random
 import pickle 
 import copy
