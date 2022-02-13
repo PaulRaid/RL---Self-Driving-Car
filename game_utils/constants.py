@@ -39,7 +39,7 @@ INIT_ACC = 1
 
 NUM_ACTIONS = 5
 NUM_RAYS = 14
-NUM_RAYS_GENETIC = 3
+NUM_RAYS_GENETIC = 5
 
 
 # Drawing conditions

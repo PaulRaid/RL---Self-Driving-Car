@@ -19,7 +19,7 @@ from collections import *
 
 
 class IndividualBrain(nn.Module):
-    def __init__(self, screen, track, input_size = NUM_RAYS_GENETIC+1, n_actions = NUM_ACTIONS , hidden_s1 = 5, hidden_s2 = 5) -> None:
+    def __init__(self, screen, track, input_size = NUM_RAYS_GENETIC+1, n_actions = NUM_ACTIONS , hidden_s1 = 10, hidden_s2 = 10) -> None:
         super().__init__()
         self.car = Car_evo(screen, track)
         self.input_size =input_size
@@ -33,8 +33,8 @@ class IndividualBrain(nn.Module):
              OrderedDict([
                 ('input' , nn.Linear(input_size, hidden_s1)),
                 ('relu1' , nn.ReLU()),
-                #('hidden' , nn.Linear(hidden_s1, hidden_s2)),
-                #('relu2' , nn.ReLU()),
+                ('hidden' , nn.Linear(hidden_s1, hidden_s2)),
+                ('relu2' , nn.ReLU()),
                 ('output' , nn.Linear(hidden_s2, n_actions)),
                 ('sigm' , nn.Softmax())]
             )
@@ -43,8 +43,10 @@ class IndividualBrain(nn.Module):
         
     def init_weights(self, m):
          if isinstance(m, nn.Linear):
-            torch.nn.init.normal_(m.weight, mean = 0, std =1.0)
-            torch.nn.init.normal_(m.bias, mean = 0, std =1.0)
+            #torch.nn.init.normal_(m.weight, mean = 0, std =1.5)
+            #torch.nn.init.normal_(m.bias, mean = 0, std =1.5)
+            torch.nn.init.uniform_(m.weight, a = -3, b =3)
+            torch.nn.init.uniform_(m.bias, a = -3, b =3)
             
         
     def forward(self, x):
@@ -66,7 +68,7 @@ class IndividualBrain(nn.Module):
         else:
             mutation_rate = 100000000 # Infinity -> no mutation
         
-        mutation_rate = 3
+        mutation_rate = 2
         
         for i, (level, type_) in enumerate(key_tab):
             if type_ == "weight":
@@ -116,18 +118,6 @@ class Evolution():
         self.decision = np.zeros(nb_indiv)  # To check if an agent has scored moved in the last 150 ticks 
         self.last_rew = np.zeros(nb_indiv)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        
-    def act(self):
-        for i,a in enumerate(self.list_indiv):
-            car = a.get_car()
-            state, t = car.get_observations()
-            
-            # PyTorch part
-            state_tensor = torch.from_numpy(state).float()
-            action = a(state_tensor.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
-            
-            #car part
-            car.act(action_chosen = action)
             
     # After having selected the 10% best of the previous gen
     def cross(self, best):
@@ -178,17 +168,15 @@ class Evolution():
         return state_.copy(), terminal_.copy()
     
     def predict_action(self, state):
-        print(state)
         recom = []
         for i,elem in enumerate(self.list_indiv):
-            if self.dead[i] == 0:                    
+            if self.dead[i] == 0:
                 state_ = torch.from_numpy(state[i]).float()
-                action_ = elem(state_.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
-                print(action_)
-                recom.append(action_)
+                action_ = elem.nn(state_.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
+                recom.append(action_.item())
             else:                    
                 recom.append(None)
-            return recom
+        return recom
         
     
     def act(self, actions):
@@ -205,6 +193,7 @@ class Evolution():
                 reward_.append(0)
                 action_chosen_.append(None)
                 terminal_.append(1)
+                self.dead[i]=1
             
             elif self.dead[i] == 0:
                 state, issue, reward, action_chosen, terminal = elem.car.act(actions[i])

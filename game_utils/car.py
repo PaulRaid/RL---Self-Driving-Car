@@ -488,7 +488,8 @@ class Car_evo(Car):
 		
 		res.append(Vision(self.rect.centerx + u.x - v.x, self.rect.centery + u.y - v.y,
 		                  self.direction_vector.rotate(15)))  # front down  30
-		
+		res.append(Vision(self.rect.centerx + v.x, self.rect.centery + v.y, v))  # side up 90
+		res.append(Vision(self.rect.centerx - v.x, self.rect.centery - v.y, -v))  # side down 90
 
 		return res
 
