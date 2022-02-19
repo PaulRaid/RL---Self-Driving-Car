@@ -43,6 +43,7 @@ while True:
 
 		for event in pygame.event.get():  # handle keybord events
 			if event.type == pygame.QUIT:
+				population.save("results/evolution")
 				quit()
 
 		recom_action = population.predict_action(issue)

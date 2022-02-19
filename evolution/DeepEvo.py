@@ -17,9 +17,9 @@ import copy
 from collections import *
 
 
-
+torch.manual_seed(1000)
 class IndividualBrain(nn.Module):
-    def __init__(self, screen, track, input_size = NUM_RAYS_GENETIC+1, n_actions = NUM_ACTIONS , hidden_s1 = 10, hidden_s2 = 10) -> None:
+    def __init__(self, screen, track, input_size = NUM_RAYS_GENETIC+1, n_actions = NUM_ACTIONS , hidden_s1 = 15, hidden_s2 = 15) -> None:
         super().__init__()
         self.car = Car_evo(screen, track)
         self.input_size =input_size
@@ -118,6 +118,8 @@ class Evolution():
         self.decision = np.zeros(nb_indiv)  # To check if an agent has scored moved in the last 150 ticks 
         self.last_rew = np.zeros(nb_indiv)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.last_best_car = IndividualBrain(screen, track)
+        self.last_best_score = -2
             
     # After having selected the 10% best of the previous gen
     def cross(self, best):
@@ -139,10 +141,16 @@ class Evolution():
         best_people =[]
         coef = 0.9
         
-        best_people = [elem for (i,elem) in enumerate(self.list_indiv) if self.scores[i] >= coef * valm]
+        best_people = [copy.copy(elem) for (i,elem) in enumerate(self.list_indiv) if self.scores[i] >= coef * valm]
+        
+        if self.last_best_score > valm:
+            best_people.append(copy.copy(self.last_best_car))
+        else:
+            self.last_best_score = valm
+            self.last_best_car = copy.copy(self.list_indiv[argm])
         
         if len(best_people)<2:
-            best_people.append(self.list_indiv[np.random.randint(self.nb_indiv)])
+            best_people.append(copy.copy(best_people[0]))
         
         self.list_indiv = self.cross(best_people)
         print("         > Crossing done ")
@@ -223,6 +231,16 @@ class Evolution():
         for j, (i,elem) in enumerate(best_people):
             #if self.dead[i] == 0:
                 elem.car.draw_car(screen)
+
+    def save(self, name):
+        argm = np.argmax(self.scores)
+        valm = self.scores[argm]
+        if self.last_best_score > valm:
+            torch.save(self.last_best_car, name+ "/Deep_evo.pt")  
+        else:
+            torch.save(self.list_indiv[argm].get_dict(), name+ "/Deep_evo.pt")  
+        print("> Ending simulation | Saving game to path " + name + " | Best score saved : " + str(max(self.last_best_score, valm))) 
+        
 
         
             

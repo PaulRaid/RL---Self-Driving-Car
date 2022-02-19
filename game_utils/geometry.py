@@ -49,7 +49,7 @@ def intersect_point_fixed(line1, line2):
 def subdivise(p1, p2, n_sub, force = False):
     vec_dir = pygame.math.Vector2(p2.x - p1.x, p2.y - p1.y)
     if force:
-        n_sub = 2*n_sub
+        n_sub = 3*n_sub
     vec_dir = vec_dir/n_sub
     res = []
     for i in range(n_sub):
