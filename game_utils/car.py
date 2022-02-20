@@ -1,3 +1,4 @@
+from select import select
 import pygame.math
 
 from game_utils.oberv import *
@@ -410,52 +411,44 @@ class Car_evo(Car):
 		self.current_observations = np.zeros(NUM_RAYS_GENETIC + 1 )
 
 	# @Override
-	def act(self, action_chosen):
+	def act(self, steer, throttle):
 		old_state, t = self.get_observations()
-		if action_chosen == 0:  # action 0 : doing nothing
-			pass
-		if action_chosen == 1:  # action 1 : Turn left
-			self.turn()
-			self.rot()
-			pass
-		if action_chosen == 2:  # action 2 : Turn right
-			self.turn(-1)
-			self.rot()
-			pass
-		if action_chosen == 3:  # action 3 : accel
-			self.accelerate()
-			pass
-		if action_chosen == 4:  # action 4 : decelerate
-			self.accelerate(-1)
-			pass
-		if action_chosen == 5:  # action 5 : Acc + Turn left
-			self.accelerate()
-			self.turn()
-			self.rot()
-			pass
-		if action_chosen == 6:  # action 6 : Acc + Turn right
-			self.accelerate()
-			self.turn(-1)
-			self.rot()
-			pass
-		if action_chosen == 7:  # action 7 : Dec + Turn left
-			self.accelerate(-1)
-			self.turn()
-			self.rot()
-			pass
-		if action_chosen == 8:  # action 6 : Dec + Turn right
-			self.accelerate(-1)
-			self.turn(-1)
-			self.rot()
-			pass
+  
+		self.accelerate(throttle)
+		self.turn(self.renorm_steer(steer))
+		self.rot()
+  
 		terminal = self.update()
-		self.last_actions.append(action_chosen)
+		self.last_actions.append((steer, throttle))
 		if terminal:
 			new_state, t = self.get_observations()
 		else:
 			new_state, t = self.get_observations()
 		reward = self.get_reward()
-		return old_state, new_state, reward, action_chosen, terminal
+		return old_state, new_state, reward, (steer, throttle), terminal
+
+	def renorm_steer(self, steer):
+		if steer<0.25:
+			return -1
+		elif steer > 0.75:
+			return 1
+		else:
+			return 0
+	
+ 	# Override as the dir is between -1 and 1
+	def turn(self, steer=1):
+		self.angle = (self.angle + steer * ANGLE) % 360
+		self.direction_vector = self.direction_vector.rotate(-1 * steer * ANGLE)
+  
+	def accelerate(self, throttle=1):
+
+		self.velvalue = self.velvalue + throttle
+
+		if self.velvalue > self.velmax:
+			self.velvalue = self.velmax
+
+		if self.velvalue < -self.velmax:
+			self.velvalue = -self.velmax
 
 	# @Override
 	def replace(self, reset=False):

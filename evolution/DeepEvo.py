@@ -19,7 +19,7 @@ from collections import *
 
 torch.manual_seed(1000)
 class IndividualBrain(nn.Module):
-    def __init__(self, screen, track, input_size = NUM_RAYS_GENETIC+1, n_actions = NUM_ACTIONS , hidden_s1 = 15, hidden_s2 = 15) -> None:
+    def __init__(self, screen, track, input_size = NUM_RAYS_GENETIC+1, n_actions = 2 , hidden_s1 = 4, hidden_s2 = 5) -> None:
         super().__init__()
         self.car = Car_evo(screen, track)
         self.input_size =input_size
@@ -36,7 +36,7 @@ class IndividualBrain(nn.Module):
                 ('hidden' , nn.Linear(hidden_s1, hidden_s2)),
                 ('relu2' , nn.ReLU()),
                 ('output' , nn.Linear(hidden_s2, n_actions)),
-                ('sigm' , nn.Softmax())]
+                ('sigm' , nn.Sigmoid())]
             )
         )
         self.nn.apply(self.init_weights)
@@ -176,18 +176,24 @@ class Evolution():
         return state_.copy(), terminal_.copy()
     
     def predict_action(self, state):
-        recom = []
+        steer_tab = []
+        throttle_tab = []
         for i,elem in enumerate(self.list_indiv):
             if self.dead[i] == 0:
                 state_ = torch.from_numpy(state[i]).float()
-                action_ = elem.nn(state_.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
-                recom.append(action_.item())
+                #action_ = elem.nn(state_.to(self.device)).argmax().unsqueeze(0).unsqueeze(0).cpu()
+                res = elem.nn(state_.to(self.device))
+                steer = res[0].item()
+                throttle = res[1].item()
+                steer_tab.append(steer)
+                throttle_tab.append(throttle)
             else:                    
-                recom.append(None)
-        return recom
+                steer_tab.append(None)
+                throttle_tab.append(None)
+        return steer_tab, throttle_tab
         
     
-    def act(self, actions):
+    def act(self, steer, throttle):
         state_ = []
         issue_ = []
         reward_ = []
@@ -204,7 +210,7 @@ class Evolution():
                 self.dead[i]=1
             
             elif self.dead[i] == 0:
-                state, issue, reward, action_chosen, terminal = elem.car.act(actions[i])
+                state, issue, reward, action_chosen, terminal = elem.car.act(steer= steer[i], throttle= throttle[i])
                 state_.append(state)
                 issue_.append(issue)
                 reward_.append(reward)

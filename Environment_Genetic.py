@@ -46,38 +46,17 @@ while True:
 				population.save("results/evolution")
 				quit()
 
-		recom_action = population.predict_action(issue)
+		steer_, throttle_ = population.predict_action(issue)
 
-		old_state, issue, reward, action_chosen, terminal = population.act(recom_action)
+		old_state, issue, reward, action_chosen, terminal = population.act(steer = steer_, throttle = throttle_)
   
-		'''if reward == 0:  # To kill cars that haven't been rewarded in last 100 games
-			counter += 1
-			if counter > 100:
-				terminal = True
-		else:
-			counter = 0'''
-
-		'''print("\nold_state",old_state)
-		print("issue", issue)
-		print("reward", reward)
-		print("action", action_chosen)
-		print("terminal", terminal )'''
-
+		print(action_chosen)
 		track.draw_track()
 		population.draw(screen)
 		# driver.print_car()
 		pygame.display.update()
 
-		# current_reward += reward
+		
 
 	# The car has crashed
-	# print("kill")
-	'''
-	game_reward.append(current_reward)
-	ind = len(game_reward)
-	if ind % REPLACE_TARGET == 0 and ind > REPLACE_TARGET:
-			agent.update_params()
-	if ind % 10 ==0:                    # print current learning infos every 10 games
-		avg = np.mean(game_reward[max(ind-100, 0):ind])
-		print("> Game Numer : " + str(ind) + " | Last Game Reward = " + str(current_reward) + " | Average R on 100 last games : " + str(avg) + " | Exploration rate : " + str(agent.get_exploration()))
-	'''
+	
